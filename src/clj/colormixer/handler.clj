@@ -12,11 +12,13 @@
        [:b "lein figwheel"]
        " in order to start the compiler"]])
 
+;; <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> <!--320-->
+
 (defn head []
   [:head
    [:meta {:charset "utf-8"}]
    [:meta {:name "viewport"
-           :content "width=device-width, initial-scale=1"}]
+           :content "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"}]
    [:title "color-mix"]
    [:link {:rel "icon" :href "/images/favicon.ico"}]
    (include-css (if (env :dev) "/css/site.css" "/css/site.min.css"))])
