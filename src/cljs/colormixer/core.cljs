@@ -133,7 +133,7 @@
                     :ff (fn [state app-state e a-key]
                             (do
                               (prn "got to function in spacebar" state app-state e a-key)
-                              (blend!nn-all state app-state 5)))}}})
+                              (blend!nn-all state app-state 10)))}}})
 
 (defn init-app-state [board-dimensions screen-percent];DEFONCE?????
   (let [app-width (* screen-percent (.-innerHeight js/window))
@@ -163,8 +163,8 @@
                                ;sep out blend and set functionality for more complex behavior later?
                                ;attach this function to block-model like OOP?
            :on-mouse-down (fn [e] (do
-                                 (swap! state assoc-in [:board n :color] weighted-color)
-                                 (swap! state assoc-in [:board n :mutable] false)))}]))
+                                 (swap! state assoc-in [:board n :color] weighted-color)))}]))
+                                 ;(swap! state assoc-in [:board n :mutable] false)))}]))
 
 (defn render-app [state app-state]
   (let [board-dimensions (:board-dimensions app-state)
