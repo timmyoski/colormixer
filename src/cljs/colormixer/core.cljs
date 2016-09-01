@@ -161,12 +161,9 @@
                                        (blend!nn state app-state n 10)));HARDCODED VAR--------;(prn (js-keys (.-style (.-target e))));(swap! app-state assoc-in [:background-color] (rgb-str (get-in @state [:background-color])))
                                ;sep out blend and set functionality for more complex behavior later?
                                ;attach this function to block-model like OOP?
-           :on-click (fn [e] (do
+           :on-mouse-down (fn [e] (do
                                  (swap! state assoc-in [:board n :color] weighted-color)
-                                 (swap! state assoc-in [:board n :mutable] false)))
-           ;:on-mouse-down (fn [e] (do (prn e)))
-           }]))
-
+                                 (swap! state assoc-in [:board n :mutable] false)))}]))
 
 (defn render-app [state app-state]
   (let [board-dimensions (:board-dimensions app-state)
@@ -279,7 +276,7 @@
 ))
 
 (defn mouse-handler [state e]
-  (prn e "reached mouse handler wheysef"))
+  (prn (js-keys e) "reached mouse handler wheysef"))
 
 ;; (defn map-blend [a-block];cursor?
 
@@ -305,12 +302,16 @@
 ;;         ())))
 
 
+;;touchstart touchend touchmove
+
 (defn register-listeners [state]
   (do
       (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
       (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
       (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
       (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
+      (.addEventListener js/window "touchstart" (blend!nn-all state @state 5))
+
 ))
 
 (def board-dimensions {:width 9 :height 9})
