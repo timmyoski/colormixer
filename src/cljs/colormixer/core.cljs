@@ -153,10 +153,11 @@
         block-model-cor (r/cursor app-state [:board n])]
     ^{:key n}
     [:div {:class "colorbox"
+           :id n ;; ?????r-uuid?
            :style {:background-color (rgb-str (:color ((:board @state) n)));; ....it waaaaas a DEREF
-                    :margin (px-str (:margin block-view-model));;bvm is already der@ffed!
-                    :width (px-str (:block-size block-view-model))
-                    :height (px-str (:block-size block-view-model))}
+                   :margin (px-str (:margin block-view-model));;bvm is already der@ffed!
+                   :width (px-str (:block-size block-view-model))
+                   :height (px-str (:block-size block-view-model))}
            :on-mouse-move (fn [e] (do  (.preventDefault e "false");stops text/mouse highlighting
                                        (blend!nn state app-state n 10)));HARDCODED VAR--------;(prn (js-keys (.-style (.-target e))));(swap! app-state assoc-in [:background-color] (rgb-str (get-in @state [:background-color])))
                                ;sep out blend and set functionality for more complex behavior later?
@@ -300,33 +301,35 @@
 ;;     (do
 ;;         (swap! state assoc-in [:input :keyboard a-key :pressed] true)
 ;;         ())))
-
-
 ;;touchstart touchend touchmove
 
-(defn register-listeners [state]
+(defn register-all-listeners [state]
+  (let [app (.getElementById js/document "app")]
   (do
+      (prn app)
+      (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
       (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
       (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
       (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
       (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
       (.addEventListener js/window "touchstart" (fn [e] (blend!nn-all state @state 5)))
+      (.addEventListener js/window "touchmove" (fn [e] (swap! state assoc-in [:board (int (.-id (.-target e))) :color]
+                                                                             (avg-colors (get-in @state [:weighted-color])
+                                                                                         (get-in @state [:board (int (.-id (.-target e))) :color]))))))))
 
-))
+(defn load-listeners [state]
+    (.addEventListener js/window "load" (register-all-listeners state)))
 
 (def board-dimensions {:width 9 :height 9})
 (def screen-percent (/ 80 100.0))
 (def app-state (init-app-state board-dimensions screen-percent))
-
-
-
 
 ;; (defn init-init []
 ;;   (let [board-dimensions {:width 9 :height 9}
 ;;         screen-percent (/ 75 100.0)]
 ;;         ;init-app-state (init-app-state board-dimensions screen-percent)]
 ;;           (do
-;;             (register-listeners app-state)
+;;             (load-listeners app-state)
 ;;             ;(add-listeners app-state)
 ;;             (render-colormix app-state);init-app-state)
 ;;     )))
@@ -369,7 +372,7 @@
 
 (defn mount-root []
   (do
-    (register-listeners app-state)
+    (load-listeners app-state)
     (r/render [current-page] (.getElementById js/document "app"))))
 
 (defn init! []
