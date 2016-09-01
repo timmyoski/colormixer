@@ -310,7 +310,7 @@
       (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
       (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
       (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
-      (.addEventListener js/window "touchstart" (blend!nn-all state @state 5))
+      (.addEventListener js/window "touchstart" (fn [e] (blend!nn-all state @state 5)))
 
 ))
 
