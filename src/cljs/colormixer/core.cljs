@@ -159,7 +159,9 @@
                    :width (px-str (:block-size block-view-model))
                    :height (px-str (:block-size block-view-model))}
            :on-mouse-move (fn [e] (do  (.preventDefault e "false");stops text/mouse highlighting
-                                       (blend!nn state app-state n 10)));HARDCODED VAR--------;(prn (js-keys (.-style (.-target e))));(swap! app-state assoc-in [:background-color] (rgb-str (get-in @state [:background-color])))
+                                       ;(swap! state assoc-in [:board n :color] weighted-color)
+                                       (blend!nn state app-state n 7)))
+                                        ;(swap! state assoc-in [:board n :color] weighted-color)));HARDCODED VAR--------;(prn (js-keys (.-style (.-target e))));(swap! app-state assoc-in [:background-color] (rgb-str (get-in @state [:background-color])))
                                ;sep out blend and set functionality for more complex behavior later?
                                ;attach this function to block-model like OOP?
            :on-mouse-down (fn [e] (do
@@ -190,6 +192,8 @@
                :style {:border-color color-type}
                :on-change (fn [e] (swap! weighted-color-cor assoc-in [rgb-index]
                                                                      (int (.-value (.-target e)))))}]))
+(defn reset-board! [state]
+  (swap! state assoc-in [:board] (new-board-refactor {:height 9 :width 9})))
 
 (defn render-gui [state app-state]
   (let [weighted-color-cor (r/cursor state [:weighted-color])]
@@ -200,9 +204,11 @@
         [:div {:class "inputs"}
             [:div {:class "submit-button"
                    :style {:background-color (rgb-str @weighted-color-cor)}}
-                  (render-rgb-input "red" weighted-color-cor)
-                  (render-rgb-input "green" weighted-color-cor)
-                  (render-rgb-input "blue" weighted-color-cor)]]]))
+                      (render-rgb-input "red" weighted-color-cor)
+                      (render-rgb-input "green" weighted-color-cor)
+                      (render-rgb-input "blue" weighted-color-cor)]]
+       [:p {:class "reset"
+              :on-click (fn [e state] (reset-board! state))} "reset"]]))
 
 (defn render-colormix [state]
   (let [app-state @state]
@@ -312,10 +318,12 @@
       (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
       (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
       (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
-      (.addEventListener js/window "touchstart" (fn [e] (blend!nn-all state @state 5)))
-      (.addEventListener js/window "touchmove" (fn [e] (swap! state assoc-in [:board (int (.-id (.-target e))) :color]
+      (.addEventListener js/window "touchstart" (fn [e] (do (.preventDefault e "false")
+                                                            (blend!nn-all state @state 5))))
+      (.addEventListener js/window "touchmove" (fn [e] (do (.preventDefault e "false")
+                                                           (swap! state assoc-in [:board (int (.-id (.-target e))) :color]
                                                                              (avg-colors (get-in @state [:weighted-color])
-                                                                                         (get-in @state [:board (int (.-id (.-target e))) :color]))))))))
+                                                                                         (get-in @state [:board (int (.-id (.-target e))) :color])))))))))
 
 (defn load-listeners [state]
     (.addEventListener js/window "load" (register-all-listeners state)))
