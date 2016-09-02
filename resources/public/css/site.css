@@ -93,6 +93,10 @@ a:hover {
   color: black;
 }
 
+.loading-img{
+  width: 400px;
+}
+
 /*
 input[type="text"] {like a class kinda
   width: "50px";

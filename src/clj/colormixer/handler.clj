@@ -7,10 +7,17 @@
 
 (def mount-target
   [:div#app
-      [:h3 "ClojureScript has not been compiled!"]
-      [:p "please run "
-       [:b "lein figwheel"]
-       " in order to start the compiler"]])
+     [:div.wrapper
+      [:h3 {:name "test"
+            :style {:height 3}}
+       "...compiling your colorrrrrrrmix..."]
+      [:img {:src "/images/favicon.ico"
+             :class "loading-img"}]]])
+              ;;:style {:width "400px"}}]]])
+
+      ;; some hiccup syntax isn't working here bc of the html f()??
+      ;; [:img {:src "/images/favicon.ico" :style "width: 200px;"} "hmmm"]]])
+      ;; [:img {:src "/images/favicon.ico" :style {:width "200px"}} "hmmm2"]]])
 
 ;; <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> <!--320-->
 

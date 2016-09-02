@@ -207,8 +207,11 @@
                       (render-rgb-input "red" weighted-color-cor)
                       (render-rgb-input "green" weighted-color-cor)
                       (render-rgb-input "blue" weighted-color-cor)]]
-       [:p {:class "reset"
-              :on-click (fn [e state] (reset-board! state))} "reset"]]))
+       [:span {:class "reset"
+               :style {:background "/images/favicon.ico"}
+              :on-click (fn [e state] (reset-board! state))} "reset"]
+       [:img {:src "/images/favicon.ico" ;;:class "loading-img"
+              :style {:width "100px"}}]]))
 
 (defn render-colormix [state]
   (let [app-state @state]
