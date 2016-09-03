@@ -86,6 +86,13 @@
 ;; but by the lack up letting up on the key (mismatched ctrl scheme but they output the same)
 
 
+;;  duuuuuuuuuuuuuuuuuuuuuuuuuuuuuude
+;; "unneccessary" mirrored scafolding in view and model b/c....
+;; can treat lookups the same (and lookups = speed)
+;; i.e. "same" lines of code (APIs match up)
+;;  (get-in model path) (get-in view path) same path -- diff var ------>>>>> Ffffffunctionize
+
+
 (defn new-weighted-avg [ primary-color weight & [color-vecs] ];;unused
   (let [num-other-colors (count color-vecs)
         num-primary (* weight num-other-colors)
@@ -129,37 +136,48 @@
 
 ;;disassoc fucntion from data structure
 
-(defn swap!-board! [board-cursor new-board]
-  (reset! board-cursor new-board))
-
 (defn inc-ed-color-board [board]
   (map-f-board inc :color board))
-
-
 ;;; here 9/3 hmmm seems to be working right...?  can't swap out entire board w/o rerender entire app huh tho?
 
 
 ;;TOTALLY LEGIT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ;; (symbol (str "r" "r")) => rr (as a var!!!)
 
-
-
 (defn init-ctrl-panel []
   {:mouse {:1 {:pressed false}}
-   :keyboard {" "  {:code "Space" :key " " :pressed false
-                    :f-pressed (fn [state app-state e a-key]
+   :keyboard {
+              " "  {:code "Space" :key " " :pressed false
+                    :f-pressed (fn [state e]  ;; leave a-key included?
+                                              ;; if already derefed/accessed var val
+                                              ;; efficient to just keep passing it?
                             (do
-                              (prn "got to function in:" a-key (.-code e)); (js-keys e))
-                              (blend!nn-all state app-state 10)))}
+                              (prn "got to function in [" (.-code e) "] in ctrl-panel"); (js-keys e))
+                              (blend!nn-all state @state 10)))}
+
               "."  {:code "Period"
                     :key "."
                     :pressed false
-                    :f-pressed (fn [state app-state e a-key]
+                    :f-pressed (fn [state e]  ;; :f-pressed (fn [state e]
                             (do
-                              (prn "got to function in: " a-key (.-code e))
+                              (prn "got to function in: " (.-key e))
                               ;; (blend!nn-all state app-state 10)
                               ))}
+
+              "r" {:code "KeyR"
+                   :key "r"
+                   :pressed false
+                   :f-pressed (fn [state e]  ;; DO - always just pass round state/global and deref when get approp level --> key-cursor at key-handler
+                                (let [board-cur (r/cursor state [:board])
+                                      board-dim (:board-dimensions @state)
+                                      new-board (new-board-refactor board-dim)] ;; only worth it if passing around board-cur
+                                  (do               ;; do you pass around state/e all day for flex or commit to cursor (speed readability )?
+                                    (prn "hitting f-pressed of reset ")
+                                    (reset! board-cur new-board))))}
               }})
+
+(defn reset!-board! [board-cur a-function]
+  (reset! board-cur (a-function (:board-dimensions board-cur))))
 
 
 (defn init-app-state [board-dimensions screen-percent];DEFONCE?????
@@ -174,8 +192,27 @@
        :app-height app-height
        :board (new-board-refactor board-dimensions)
        :board-dimensions board-dimensions
+       :screen-percent screen-percent
        :block-view-model (get-block-view-model board-dimensions screen-percent app-width margins)
-       :input (init-ctrl-panel)})))
+       :ctrl-panel (init-ctrl-panel)})))
+
+
+
+;; whoaaaaaaaaaaaaaaaa duuuuuude
+;; objects are just stateful functions
+;; f can be made to spit out dynamic objects based on state
+;; functional prog uber alles
+;; global objects/maps/constants are ok tho, but should be spit out of init functions
+
+;; change to...
+;; :board {:board-view-model {:board-dimensions board-dimensions
+;;                            :screen-percent screen-percent}
+;;         :board-model (new-board-refactor board-dimensions)}
+;; this way can pass around @board-cursor and not need anything else to re-render
+;; i.e. re-render =? init-app-state? new-board-refactor?
+
+(defn make-cursor [an-atom a-path]
+  (r/cursor an-atom a-path))
 
 (defn render-block-html [state app-state block-view-model n] ;;still called by init
   (let [weighted-color (:weighted-color app-state)
@@ -188,11 +225,9 @@
                    :width  (px-str (:block-size block-view-model)) ;; would (str (/ 75 9) "%") even work?
                    :height (px-str (:block-size block-view-model))}
            :on-mouse-move (fn [e] (do  (.preventDefault e "false");stops text/mouse highlighting
-                                       ;(swap! state assoc-in [:board n :color] weighted-color)
                                        (blend!nn state app-state n 7)))
-                                        ;(swap! state assoc-in [:board n :color] weighted-color)));HARDCODED VAR--------;(prn (js-keys (.-style (.-target e))));(swap! app-state assoc-in [:background-color] (rgb-str (get-in @state [:background-color])))
-                               ;sep out blend and set functionality for more complex behavior later?
-                               ;attach this function to block-model like OOP?
+                              ;; sep out blend and set functionality for more complex behavior later?
+                              ;; attach this function to block-model like OOP?
            :on-mouse-down (fn [e] (do
                                  (swap! state assoc-in [:board n :color] weighted-color)))}]))
                                  ;(swap! state assoc-in [:board n :mutable] false)))}]))
@@ -202,14 +237,9 @@
         block-view-model (:block-view-model app-state)
         app-width (:app-width app-state) ;;75%
         app-height "100%"]
-
-
-
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; am here
     ;; how do i get the blocks to function with css %??? haha easy
-
 
 
             [:div {:class "content"
@@ -223,7 +253,7 @@
   (let [rgb ["red" "green" "blue"] ;onenter-> sw focus to next?
         rgb-index (.indexOf rgb color-type)]
     ;add some sort of button that has a :on method that incs/decs the color input ;just have it dec the val, start that chain of derrefs/renders
-      [:input {:class "rgb-input"
+      [:ctrl-panel {:class "rgb-input"
                :type "text"
                :max-length 3 ;; :on-key-press (fn [e] (if (< 47 (.-keyCode e) 58) (do (prn (.-keyCode e)) e)))
                :name color-type
@@ -231,8 +261,6 @@
                :style {:border-color color-type}
                :on-change (fn [e] (swap! weighted-color-cor assoc-in [rgb-index]
                                                                      (int (.-value (.-target e)))))}]))
-(defn reset-board! [state]
-  (swap! state assoc-in [:board] (new-board-refactor {:height 9 :width 9})))
 
 (defn render-gui [state app-state]
   (let [weighted-color-cor (r/cursor state [:weighted-color])]
@@ -248,7 +276,7 @@
                       (render-rgb-input "blue" weighted-color-cor)]]
        [:span {:class "reset"
                :style {:background "/images/favicon.ico"}
-              :on-click (fn [e state] (reset-board! state))} "reset"]
+              :on-click (fn [e state] (prn "reset!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"))} "reset"]
        [:img {:src "/images/favicon.ico" ;;:class "loading-img"
               :style {:width "10%"}}]]))
 
@@ -272,16 +300,16 @@
 
 ; with map structure of inputs key-handlers can adopt a function/lookup syntax
 ;; (.-keyCode e) = 56 (int)
-;; (get-in app-state [:input :keyboard (.-keyCode e) :function])
+;; (get-in app-state [:ctrl-panel :keyboard (.-keyCode e) :function])
 
 ;; (let [app-state @state
 ;;       key (.-key e)
-;;       key-model-cursor (r/cursor state [:input :keyboard key])]
+;;       key-model-cursor (r/cursor state [:ctrl-panel :keyboard key])]
 ;;
 ;;       ((:function-tree @key-model-cursor) state app-state e key)
 ;;
 
-;;((get-in input [:input :keyboard 32 :function]) "hey stranger") - working
+;;((get-in input [:ctrl-panel :keyboard 32 :function]) "hey stranger") - working
 
 ;; (defn update-content-width []
 ;;   (swap! app-state assoc-in [:width] (* (.-innerHeight js/window) (/ 75 100.0)))
@@ -348,28 +376,38 @@
   (prn "hmmm")
 )
 
+;; cursors only "work" if you organize code in view/model hierarchy where
+;; sub global functions/models/views only can operate on their own "level" (non-global)
+
+
 (defn key-handler [state e]
   (let [a-key (.-key e)
-        key-cursor (r/cursor state [:input :keyboard a-key])] ;;test-this-works! (prn a-key)]
-    (if (= "keydown" (.-type e))
-      (cond ;"function (state,app_state,e,a_key){
-        (= a-key " ") ((:f-pressed @key-cursor) state @state e a-key) ;((get-in @state [:input :keyboard a-key :f-pressed]) state 10)
-        (= a-key ".") ((:f-pressed @key-cursor) state @state e a-key)
-        ;; :else (prn a-key "type is dooooown.... type= " (.-type e) " ;-(")
-      ))))
-      ;(do
-      ;  (prn "type is uppppppppppppp : " (.-type e) " ;-)")))))
-;;     (if (:pressed
-;;     (do
-;;         (swap! state assoc-in [:input :keyboard a-key :pressed] true)
-;;         ())))
-;;touchstart touchend touchmove
+        key-model-cur (r/cursor state [:ctrl-panel :keyboard a-key])
+        f-pressed (:f-pressed @key-model-cur)] ;; just make and pass around an app-state cursor?
+    (if (= "keydown" (.-type e))                              ;; can pass to :f-pressed too
+      (f-pressed state e))))
+
+
+;;       (cond
+;;         (= a-key " ") ((:f-pressed @key-cur) ;; gets correct f() from ctrl-panel
+;;                          state @state e a-key)  ;; args for f() from ctrl-panel
+;;         (= a-key ".") ((:f-pressed @key-cur) state @state e a-key)  ;; should i keep structure more general like this ?
+;;         (= a-key "r") ((:f-pressed @key-cur) (r/cursor state [:board]) (:board-dimensions @state)) ;; just pass an app-state cursor? most functions will affect the entire board but mouse/etc will affect certain areas (but can pass entire board as fail safe?
+        ;; :else (prn a-key "type is dooooown.... type= " (.-type e)  "code " (.-code e) " ;-(")
+;;       )))
+
+      ;(do (prn "type is uppppppppppppp : " (.-type e) " ;-)")))))
+
+      ;; (f-pressed args)
+
+
+ (defn get-f-by-key [a-key ctrl-panel-cur]
+   (get-in @ctrl-panel-cur [:keyboard a-key :f-pressed]))
 
 (defn register-all-listeners [state]
   (let [app (.getElementById js/document "app")]
   (do
       (prn app)
-      ;(.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
       (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
       (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
       (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
@@ -381,8 +419,8 @@
                                                                              (avg-colors (get-in @state [:weighted-color])
                                                                                          (get-in @state [:board (int (.-id (.-target e))) :color])))))))))
 
-(defn load-listeners [state]
-    (.addEventListener js/window "load" (register-all-listeners state)))
+(defonce load-listeners
+    (fn [state] (.addEventListener js/window "load" (register-all-listeners state))))
 
 (def board-dimensions {:width 9 :height 9})
 (def screen-percent (/ 80 100.0))
@@ -401,7 +439,7 @@
 ;;------------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
-;;------------------------------------------------------------------------------------
+;;-----------------------------------------------------------------------------------
 
 ;; -------------------------
 ;; Views
