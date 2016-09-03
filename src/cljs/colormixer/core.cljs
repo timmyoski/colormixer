@@ -118,31 +118,60 @@
 (defn blend!nn-all [state app-state weight-prim-color]
   (doall
       (for [n (range (count (:board app-state)))]
-        (blend!nn state app-state n weight-prim-color)
-          )))
+        (blend!nn state app-state n weight-prim-color))))
+
+(defn map-f-board [a-function block-loc a-board]
+  (vec
+    (map
+     #(assoc-in % [block-loc]
+                    (vec (map a-function (block-loc %))))
+     a-board)))
+
+;;disassoc fucntion from data structure
+
+(defn swap!-board! [board-cursor new-board]
+  (reset! board-cursor new-board))
+
+(defn inc-ed-color-board [board]
+  (map-f-board inc :color board))
+
+
+;;; here 9/3 hmmm seems to be working right...?  can't swap out entire board w/o rerender entire app huh tho?
+
+
+;;TOTALLY LEGIT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+;; (symbol (str "r" "r")) => rr (as a var!!!)
+
 
 
 (defn init-ctrl-panel []
   {:mouse {:1 {:pressed false}}
-   :keyboard {" "  {:name "spacebar"
-                    :key " "
-                    :pressed false
-;;                     :f-pressed (fn [state app-state e a-key]
-;;                                    (while (get-in state [:input :keyboard a-key :pressed])
-;;                                      (blend!nn-all state app-state 5)))
-                    :ff (fn [state app-state e a-key]
+   :keyboard {" "  {:code "Space" :key " " :pressed false
+                    :f-pressed (fn [state app-state e a-key]
                             (do
-                              (prn "got to function in spacebar" state app-state e a-key)
-                              (blend!nn-all state app-state 10)))}}})
+                              (prn "got to function in:" a-key (.-code e)); (js-keys e))
+                              (blend!nn-all state app-state 10)))}
+              "."  {:code "Period"
+                    :key "."
+                    :pressed false
+                    :f-pressed (fn [state app-state e a-key]
+                            (do
+                              (prn "got to function in: " a-key (.-code e))
+                              ;; (blend!nn-all state app-state 10)
+                              ))}
+              }})
+
 
 (defn init-app-state [board-dimensions screen-percent];DEFONCE?????
   (let [app-width (* screen-percent (.-innerHeight js/window))
+        app-height (* screen-percent (.-innerHeight js/window))
         margins 0]; 1000?????;(.-innerHeight js/window) (:screen-percent @app-state))
     (r/atom
       {:title "...blend away your troubles...."
        :background-color [255 255 255]
        :weighted-color [255 255 255];NECCESSARY/WANTED??!?!?!
        :app-width app-width
+       :app-height app-height
        :board (new-board-refactor board-dimensions)
        :board-dimensions board-dimensions
        :block-view-model (get-block-view-model board-dimensions screen-percent app-width margins)
@@ -156,7 +185,7 @@
            :id n ;; ?????r-uuid?
            :style {:background-color (rgb-str (:color ((:board @state) n)));; ....it waaaaas a DEREF
                    :margin (px-str (:margin block-view-model));;bvm is already der@ffed!
-                   :width (px-str (:block-size block-view-model))
+                   :width  (px-str (:block-size block-view-model)) ;; would (str (/ 75 9) "%") even work?
                    :height (px-str (:block-size block-view-model))}
            :on-mouse-move (fn [e] (do  (.preventDefault e "false");stops text/mouse highlighting
                                        ;(swap! state assoc-in [:board n :color] weighted-color)
@@ -171,10 +200,20 @@
 (defn render-app [state app-state]
   (let [board-dimensions (:board-dimensions app-state)
         block-view-model (:block-view-model app-state)
-        app-width (:app-width app-state)]
+        app-width (:app-width app-state) ;;75%
+        app-height "100%"]
+
+
+
+
+
+    ;; am here
+    ;; how do i get the blocks to function with css %??? haha easy
+
+
 
             [:div {:class "content"
-                   :style {:width app-width}}
+                   :style {:width app-width}} ;; :height app-height}}
                 (doall (for [n (range (* (:height board-dimensions)
                                          (:width board-dimensions)))]
                             (render-block-html state app-state block-view-model n)))]))
@@ -211,7 +250,7 @@
                :style {:background "/images/favicon.ico"}
               :on-click (fn [e state] (reset-board! state))} "reset"]
        [:img {:src "/images/favicon.ico" ;;:class "loading-img"
-              :style {:width "100px"}}]]))
+              :style {:width "10%"}}]]))
 
 (defn render-colormix [state]
   (let [app-state @state]
@@ -279,6 +318,19 @@
 
 
 
+;; FLEXIBLE BLOCKS
+;; all the flexibility and mobile-compatibilyt can be achieved
+;; solely through use of the built-in (% width) of css
+
+;; keep like a gui-width (10%) white/-selected color around app
+;; favoicon/home-app-button/modal t/f
+
+;; bottom has like 2-3 buttons (game) functionality
+;; home button would toggle t/f of :modal in app-state
+
+;; just have modal work like an atom?
+;; flip display css property of 'modal'
+
 
 (defn add-listeners [state]
   (do (.addEventListener js/window "keyup" (fn [e] (key-handlers e state)))
@@ -298,11 +350,12 @@
 
 (defn key-handler [state e]
   (let [a-key (.-key e)
-    key-cursor (r/cursor state [:input :keyboard a-key])]
+        key-cursor (r/cursor state [:input :keyboard a-key])] ;;test-this-works! (prn a-key)]
     (if (= "keydown" (.-type e))
       (cond ;"function (state,app_state,e,a_key){
-        (= a-key " ") ((:ff @key-cursor) state @state e a-key) ;((get-in @state [:input :keyboard a-key :ff]) state 10)
-        ;:else (prn "type is dooooown : " (.-type e) " ;-(")
+        (= a-key " ") ((:f-pressed @key-cursor) state @state e a-key) ;((get-in @state [:input :keyboard a-key :f-pressed]) state 10)
+        (= a-key ".") ((:f-pressed @key-cursor) state @state e a-key)
+        ;; :else (prn a-key "type is dooooown.... type= " (.-type e) " ;-(")
       ))))
       ;(do
       ;  (prn "type is uppppppppppppp : " (.-type e) " ;-)")))))
@@ -316,7 +369,7 @@
   (let [app (.getElementById js/document "app")]
   (do
       (prn app)
-      (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
+      ;(.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
       (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
       (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
       (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))

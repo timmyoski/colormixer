@@ -10,7 +10,7 @@
      [:div.wrapper
       [:h3 {:name "test"
             :style {:height 3}}
-       "...compiling your colorrrrrrrmix..."]
+       "...compiling your colormix..."]
       [:img {:src "/images/favicon.ico"
              :class "loading-img"}]]])
               ;;:style {:width "400px"}}]]])
