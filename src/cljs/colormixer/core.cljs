@@ -5,7 +5,6 @@
               [accountant.core :as accountant]))
 
 
-;;---------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
@@ -18,7 +17,7 @@
 ;;------------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
-;; start
+;;------------------------------------------------------------------------------------
 
 (defn rand-color-num []
   [(rand-int 256)
@@ -64,7 +63,7 @@
 
 
 ;;only info that relates to block size (dependant on screen size dynamically)
-(defn get-block-view-model [board-dimensions screen-percent app-width margin];app-width
+(defn get-block-view-model [board-dimensions screen-percent app-width app-height margin];app-width
   (let [block-total-size (int (/ app-width (:width board-dimensions)))]
     {:margin margin
      :block-total-size block-total-size
@@ -148,53 +147,56 @@
   {:mouse {:1 {:pressed false}}
    :keyboard {
               " "  {:code "Space" :key " " :pressed false
-                    :f-pressed (fn [state e]  ;; leave a-key included?
+                    :f-pressed (fn [state e board-cur]  ;; leave a-key included?
                                               ;; if already derefed/accessed var val
                                               ;; efficient to just keep passing it?
                             (do
-                              (prn "got to function in [" (.-code e) "] in ctrl-panel"); (js-keys e))
+                              (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it blends the entire board")
                               (blend!nn-all state @state 10)))}
 
-              "."  {:code "Period"
-                    :key "."
-                    :pressed false
-                    :f-pressed (fn [state e]  ;; :f-pressed (fn [state e]
-                            (do
-                              (prn "got to function in: " (.-key e))
-                              ;; (blend!nn-all state app-state 10)
-                              ))}
+              "."  {:code "Period" :key "." :pressed false
+                    :f-pressed (fn [state e board-cur]
+                                 (let [view-info (meta @board-cur)
+                                       new-board (with-meta (inc-ed-color-board @board-cur) view-info)] ;; if using this do this somewhere else
+                                         (do (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
+                                             (reset! board-cur new-board))))}
 
-              "r" {:code "KeyR"
-                   :key "r"
-                   :pressed false
-                   :f-pressed (fn [state e]  ;; DO - always just pass round state/global and deref when get approp level --> key-cursor at key-handler
-                                (let [board-cur (r/cursor state [:board])
-                                      board-dim (:board-dimensions @state)
-                                      new-board (new-board-refactor board-dim)] ;; only worth it if passing around board-cur
-                                  (do               ;; do you pass around state/e all day for flex or commit to cursor (speed readability )?
-                                    (prn "hitting f-pressed of reset ")
-                                    (reset! board-cur new-board))))}
+              "r" {:code "KeyR" :key "r" :pressed false
+                   :f-pressed (fn [state e board-cur]  ;; DO - always just pass round state/global and deref when get approp level --> key-cursor at key-handler
+                                (let [view-info (meta @board-cur) ;; is this the new $$$$ jackpot?  view/model info as meta (view is always meta?)  (globals/constants always meta?)
+                                      board-dim (:board-dimensions view-info)
+                                      new-board (with-meta (new-board-refactor board-dim) view-info)]
+                                (do  (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it resets the board-colors")
+                                     (reset! board-cur new-board))))}
               }})
 
-(defn reset!-board! [board-cur a-function]
-  (reset! board-cur (a-function (:board-dimensions board-cur))))
 
-
-(defn init-app-state [board-dimensions screen-percent];DEFONCE?????
-  (let [app-width (* screen-percent (.-innerHeight js/window))
-        app-height (* screen-percent (.-innerHeight js/window))
-        margins 0]; 1000?????;(.-innerHeight js/window) (:screen-percent @app-state))
+(defn init-app-state [board-dimensions app-width-percent];DEFONCE?????
+  (let [window-dim {:width (.-innerWidth js/window)
+                    :height (.-innerHeight js/window)}
+        gui-height-per 15
+        app-view {:width (* 1 (:width window-dim))
+                  :height (* (/ (- 100 (* 2 gui-height-per)) 100) (:height window-dim))}
+        app-width (:width app-view) ;; needed here bc of old api
+        app-height (:height app-view)
+        margins 0]
     (r/atom
       {:title "...blend away your troubles...."
        :background-color [255 255 255]
        :weighted-color [255 255 255];NECCESSARY/WANTED??!?!?!
        :app-width app-width
        :app-height app-height
-       :board (new-board-refactor board-dimensions)
+       :board (with-meta (new-board-refactor board-dimensions)
+                         {:board-dimensions board-dimensions :screen-percent app-width-percent})
        :board-dimensions board-dimensions
-       :screen-percent screen-percent
-       :block-view-model (get-block-view-model board-dimensions screen-percent app-width margins)
-       :ctrl-panel (init-ctrl-panel)})))
+       :app-width-percent app-width-percent
+       :block-view-model (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
+       :ctrl-panel (init-ctrl-panel)
+       :view {:gui {:width (* (/ 100 100) (:width window-dim))
+                    :height (* (/ gui-height-per 100) (:height window-dim))}
+              :app {:width app-width
+                    :height app-height}
+              :modal {:future true}}})))
 
 
 
@@ -240,8 +242,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; am here
     ;; how do i get the blocks to function with css %??? haha easy
-
-
             [:div {:class "content"
                    :style {:width app-width}} ;; :height app-height}}
                 (doall (for [n (range (* (:height board-dimensions)
@@ -253,7 +253,7 @@
   (let [rgb ["red" "green" "blue"] ;onenter-> sw focus to next?
         rgb-index (.indexOf rgb color-type)]
     ;add some sort of button that has a :on method that incs/decs the color input ;just have it dec the val, start that chain of derrefs/renders
-      [:ctrl-panel {:class "rgb-input"
+      [:input {:class "rgb-input"
                :type "text"
                :max-length 3 ;; :on-key-press (fn [e] (if (< 47 (.-keyCode e) 58) (do (prn (.-keyCode e)) e)))
                :name color-type
@@ -262,41 +262,238 @@
                :on-change (fn [e] (swap! weighted-color-cor assoc-in [rgb-index]
                                                                      (int (.-value (.-target e)))))}]))
 
-(defn render-gui [state app-state]
+;; (defn make-keyword [ & inputs ]
+;;   (keyword (apply str inputs)))
+;; (make-keyword [4] "g" 5)
+;; (make-keyword "div" "." "top-gui-wrapper")
+
+(defn render-bottom-gui [state app-state]
   (let [weighted-color-cor (r/cursor state [:weighted-color])]
 
-      [:div {:class "gui-wrapper"}
-        [:div {:class "title-wrapper"}]
-            ;[:h2 {:class "the-title"} (:title app-state)]]
-        [:div {:class "inputs"}
-            [:div {:class "submit-button"
+      [:div.botom-gui-wrapper;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
+        [:div {:class "input-wrapper"}
+            [:div {:class "input-gui"
                    :style {:background-color (rgb-str @weighted-color-cor)}}
                       (render-rgb-input "red" weighted-color-cor)
                       (render-rgb-input "green" weighted-color-cor)
-                      (render-rgb-input "blue" weighted-color-cor)]]
-       [:span {:class "reset"
-               :style {:background "/images/favicon.ico"}
-              :on-click (fn [e state] (prn "reset!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"))} "reset"]
+                      (render-rgb-input "blue" weighted-color-cor)
+    ;; stoped here 9/3 trying to make reset button work
+        ;((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e (r/cursor state [:board]))))}
+
        [:img {:src "/images/favicon.ico" ;;:class "loading-img"
-              :style {:width "10%"}}]]))
+              :style {:width "10%"}}]]]]))
+
+(defn render-top-gui [state app-state]
+  (let [gui-view (get-in app-state [:view :gui])] ;; HAHA MAKE THIS ACTUALLY WORK
+      [:div.top-gui-wrapper {:style {:display "flex" ;;:width "20em" :height "2em"
+                                     :background-color (rgb-str (:weighted-color @state))
+                                     :align-items "center"
+                                     :justify-content "center"
+                                     :width "100%"
+                                     :height "15vh"}}
+          [:div {:class "reset"
+                 :style {:background-color (rgb-str (:weighted-color @state))
+                         :width "100%"
+                         :height "2em"} ;; come back to real css solution to % width/height
+                 :on-mouse-down (fn [e state]
+                                     (let [board-cur (r/cursor state [:board])
+                                           view-info (meta @board-cur) ;; is this the new $$$$ jackpot?  view/model info as meta (view is always meta?)  (globals/constants always meta?)
+                                           board-dim (:board-dimensions view-info)
+                                           new-board (with-meta (new-board-refactor board-dim) view-info)]
+                                              (do  (prn "got to function in [ lors"))))} ;;(.-code e) "] in click event" "---> it resets the board-colors"))))}
+                                                   ;; (reset! board-cur new-board))))}
+                 "reset"]]))
+
+;; :view {:gui {:width (* (/ 100 100) (:width window-dim))
+;;                     :height (* (/ gui-height-per 100) (:height window-dim))}
+;;               :app {:width app-width
+;;                     :height app-height}
+
+
+;; (fn [state e board-cur]  ;; DO - always just pass round state/global and deref when get approp level --> key-cursor at key-handler
+;;     (let [view-info (meta @board-cur) ;; is this the new $$$$ jackpot?  view/model info as meta (view is always meta?)  (globals/constants always meta?)
+;;           board-dim (:board-dimensions view-info)
+;;           new-board (with-meta (new-board-refactor board-dim) view-info)]
+;;     (do  (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it resets the board-colors")
+;;          (reset! board-cur new-board))))
+
 
 (defn render-colormix [state]
   (let [app-state @state]
         [:div {:class "react-container"}
-          (render-gui state app-state)
-          (render-app state app-state)]))
+          (render-top-gui state app-state)
+          (render-app state app-state)
+          (render-bottom-gui state app-state)]))
 
-(defn key-handlers [e state]
-  (let [app-state @state]
-    (do
-        (prn (.-key e) "key of keyup" (js-keys e) (.-key e)))
-        (cond
-          (= (.-key e) " ") (blend!nn-all state app-state 10); SpaceBar ;;stop propigation() AAAAAND stopDefault()?
-          (= (.-key e) "g") (doall (for [i (range 10)] (blend!nn-all state app-state 10)));; g do blend 10x
-          ;(= (.-keyCode e) 78) (all-immutable num-tiles);n - make not mutable
-          ;(= (.-keyCode e) 77) (swap! state assoc-in [:board] (vec (map #((:mutable %) (:board app-state)))));m - make mutable
-          ;(= (.-keyCode e) 188) (swap! state assoc-in [:board] (vec (map #(vec (map inc %)) (map #(:color %) (:board app-state)))))
-        )))
+
+;;---------------------------------------------------------------------
+;;---------------------------------------------------------------------
+;;  Handlers
+
+(defn mouse-handler [state e]
+  (if (= (.-type e) "mousedown")
+    (prn "reached mouse down handler wheysef"
+         (.-button e)
+         (.-buttons e)
+         (.-relatedTarget e)
+         (.-type e))))
+
+
+(defn key-handler [state e]
+  (let [a-key (.-key e)
+        key-model-cur (r/cursor state [:ctrl-panel :keyboard a-key])
+        f-pressed (:f-pressed @key-model-cur)
+        board-cur (r/cursor state [:board])] ;; most/ ???all??? key functions will affect the entire board (unless directional for ctrl "person")
+    (if (= "keydown" (.-type e))                              ;; can pass to :f-pressed too
+      (f-pressed state e board-cur))))
+
+
+;; cursors only "work" if you organize code in view/model hierarchy where
+;; sub global functions/models/views only can operate on their own "level" (non-global)
+
+
+
+ (defn get-f-by-key [a-key ctrl-panel-cur]
+   (get-in @ctrl-panel-cur [:keyboard a-key :f-pressed]))
+
+(defn register-all-listeners [state]
+  (let [app (.getElementById js/document "app")]
+  (do
+      (prn app)
+      (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
+      (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
+      (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
+      (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
+      (.addEventListener js/window "touchstart" (fn [e] (do (.preventDefault e "false")
+                                                            (blend!nn-all state @state 5))))
+      (.addEventListener js/window "touchmove" (fn [e] (do (.preventDefault e "false")
+                                                           (swap! state assoc-in [:board (int (.-id (.-target e))) :color]
+                                                                             (avg-colors (get-in @state [:weighted-color])
+                                                                                         (get-in @state [:board (int (.-id (.-target e))) :color])))))))))
+
+(defonce load-listeners
+    (fn [state] (.addEventListener js/window "load" (register-all-listeners state))))
+
+(def board-dimensions {:width 6 :height 6})
+(def screen-percent (/ 80 100.0))
+(def app-state (init-app-state board-dimensions screen-percent))
+
+;; -------------------------
+;; Views
+
+(defn home-page []
+  (let [board-dimensions {:width 9 :height 9}
+        screen-percent (/ 75 100.0)]
+            (render-colormix app-state)))
+
+(defn about-page []
+  [:div [:h2 "About colormixer"]
+   [:div [:a {:href "/"} "go to the home page"]]])
+
+(defn current-page []
+  [:div [(session/get :current-page)]])
+
+;; -------------------------
+;; Routes
+
+(secretary/defroute "/" []
+  (session/put! :current-page #'home-page))
+
+(secretary/defroute "/about" []
+  (session/put! :current-page #'about-page))
+
+;; -------------------------
+;; Initialize app
+
+(defn mount-root []
+  (do
+    (load-listeners app-state)
+    (r/render [current-page] (.getElementById js/document "app"))))
+
+(defn init! []
+  (accountant/configure-navigation!
+    {:nav-handler
+     (fn [path]
+       (secretary/dispatch! path))
+     :path-exists?
+     (fn [path]
+       (secretary/locate-route path))})
+  (accountant/dispatch-current!)
+  (mount-root))
+
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;; (defn key-handlers [e state]
+;;   (let [app-state @state]
+;;     (do
+;;         (prn (.-key e) "key of key-down" (js-keys e) (.-key e)))
+;;         (cond
+;;           (= (.-key e) " ") (blend!nn-all state app-state 10); SpaceBar ;;stop propigation() AAAAAND stopDefault()?
+;;           (= (.-key e) "g") (doall (for [i (range 10)] (blend!nn-all state app-state 10)));; g do blend 10x
+;;           ;(= (.-keyCode e) 78) (all-immutable num-tiles);n - make not mutable
+;;           ;(= (.-keyCode e) 77) (swap! state assoc-in [:board] (vec (map #((:mutable %) (:board app-state)))));m - make mutable
+;;           ;(= (.-keyCode e) 188) (swap! state assoc-in [:board] (vec (map #(vec (map inc %)) (map #(:color %) (:board app-state)))))
+;;         )))
+
+
+;; (defn add-listeners [state]
+;;   (do (.addEventListener js/window "keyup" (fn [e] (key-handlers e state)))
+;;   ;(.addEventListener js/window "onresize" update-content-width)
+;; ))
+
+
+
+;;       (cond
+;;         (= a-key " ") ((:f-pressed @key-cur) ;; gets correct f() from ctrl-panel
+;;                          state @state e a-key)  ;; args for f() from ctrl-panel
+;;         (= a-key ".") ((:f-pressed @key-cur) state @state e a-key)  ;; should i keep structure more general like this ?
+;;         (= a-key "r") ((:f-pressed @key-cur) (r/cursor state [:board]) (:board-dimensions @state)) ;; just pass an app-state cursor? most functions will affect the entire board but mouse/etc will affect certain areas (but can pass entire board as fail safe?
+        ;; :else (prn a-key "type is dooooown.... type= " (.-type e)  "code " (.-code e) " ;-(")
+;;       )))
+
+      ;(do (prn "type is uppppppppppppp : " (.-type e) " ;-)")))))
+
+      ;; (f-pressed args)
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+
+;; random notes
+;; no mas scroll
 
 ; with map structure of inputs key-handlers can adopt a function/lookup syntax
 ;; (.-keyCode e) = 56 (int)
@@ -358,132 +555,3 @@
 
 ;; just have modal work like an atom?
 ;; flip display css property of 'modal'
-
-
-(defn add-listeners [state]
-  (do (.addEventListener js/window "keyup" (fn [e] (key-handlers e state)))
-  ;(.addEventListener js/window "onresize" update-content-width)
-))
-
-(defn mouse-handler [state e]
-  (prn (js-keys e) "reached mouse handler wheysef"))
-
-;; (defn map-blend [a-block];cursor?
-
-
-(defn blend-all-final! [state app-state weight-prim-color]
-  ;(map #(swap! state (:color %) map-blend (:board app-state))
-  (prn "hmmm")
-)
-
-;; cursors only "work" if you organize code in view/model hierarchy where
-;; sub global functions/models/views only can operate on their own "level" (non-global)
-
-
-(defn key-handler [state e]
-  (let [a-key (.-key e)
-        key-model-cur (r/cursor state [:ctrl-panel :keyboard a-key])
-        f-pressed (:f-pressed @key-model-cur)] ;; just make and pass around an app-state cursor?
-    (if (= "keydown" (.-type e))                              ;; can pass to :f-pressed too
-      (f-pressed state e))))
-
-
-;;       (cond
-;;         (= a-key " ") ((:f-pressed @key-cur) ;; gets correct f() from ctrl-panel
-;;                          state @state e a-key)  ;; args for f() from ctrl-panel
-;;         (= a-key ".") ((:f-pressed @key-cur) state @state e a-key)  ;; should i keep structure more general like this ?
-;;         (= a-key "r") ((:f-pressed @key-cur) (r/cursor state [:board]) (:board-dimensions @state)) ;; just pass an app-state cursor? most functions will affect the entire board but mouse/etc will affect certain areas (but can pass entire board as fail safe?
-        ;; :else (prn a-key "type is dooooown.... type= " (.-type e)  "code " (.-code e) " ;-(")
-;;       )))
-
-      ;(do (prn "type is uppppppppppppp : " (.-type e) " ;-)")))))
-
-      ;; (f-pressed args)
-
-
- (defn get-f-by-key [a-key ctrl-panel-cur]
-   (get-in @ctrl-panel-cur [:keyboard a-key :f-pressed]))
-
-(defn register-all-listeners [state]
-  (let [app (.getElementById js/document "app")]
-  (do
-      (prn app)
-      (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
-      (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
-      (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
-      (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
-      (.addEventListener js/window "touchstart" (fn [e] (do (.preventDefault e "false")
-                                                            (blend!nn-all state @state 5))))
-      (.addEventListener js/window "touchmove" (fn [e] (do (.preventDefault e "false")
-                                                           (swap! state assoc-in [:board (int (.-id (.-target e))) :color]
-                                                                             (avg-colors (get-in @state [:weighted-color])
-                                                                                         (get-in @state [:board (int (.-id (.-target e))) :color])))))))))
-
-(defonce load-listeners
-    (fn [state] (.addEventListener js/window "load" (register-all-listeners state))))
-
-(def board-dimensions {:width 9 :height 9})
-(def screen-percent (/ 80 100.0))
-(def app-state (init-app-state board-dimensions screen-percent))
-
-;; (defn init-init []
-;;   (let [board-dimensions {:width 9 :height 9}
-;;         screen-percent (/ 75 100.0)]
-;;         ;init-app-state (init-app-state board-dimensions screen-percent)]
-;;           (do
-;;             (load-listeners app-state)
-;;             ;(add-listeners app-state)
-;;             (render-colormix app-state);init-app-state)
-;;     )))
-;;------------------------------------------------------------------------------------
-;;------------------------------------------------------------------------------------
-;;------------------------------------------------------------------------------------
-;;------------------------------------------------------------------------------------
-;;-----------------------------------------------------------------------------------
-
-;; -------------------------
-;; Views
-
-(defn home-page []
-  (let [board-dimensions {:width 9 :height 9}
-        screen-percent (/ 75 100.0)]
-
-    (render-colormix app-state)))
-;;   [:div [:h2 "Welcome to colormixer"]
-;;    [:div [:a {:href "/about"} "go to about page"]]])
-;;      (init-init))
-
-(defn about-page []
-  [:div [:h2 "About colormixer"]
-   [:div [:a {:href "/"} "go to the home page"]]])
-
-(defn current-page []
-  [:div [(session/get :current-page)]])
-
-;; -------------------------
-;; Routes
-
-(secretary/defroute "/" []
-  (session/put! :current-page #'home-page))
-
-(secretary/defroute "/about" []
-  (session/put! :current-page #'about-page))
-
-;; -------------------------
-;; Initialize app
-
-(defn mount-root []
-  (do
-    (load-listeners app-state)
-    (r/render [current-page] (.getElementById js/document "app"))))
-
-(defn init! []
-  (accountant/configure-navigation!
-    {:nav-handler
-     (fn [path]
-       (secretary/dispatch! path))
-     :path-exists?
-     (fn [path]
-       (secretary/locate-route path))})
-  (accountant/dispatch-current!)
-  (mount-root))

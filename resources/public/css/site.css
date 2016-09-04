@@ -26,7 +26,7 @@ a:hover {
 
 .body-container {
   font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 75%;
+  max-width: 100%;
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
   font-size: 1.125em;
@@ -37,7 +37,6 @@ a:hover {
 
 .content{
   margin: 0 auto;
-  padding-top: 3%;
 }
 
 .jankynav{
@@ -58,7 +57,7 @@ a:hover {
   border: 5px solid;
 }
 
-.submit-button{
+.input-gui{
   border-style: outset;
   border-width: 10px;
   border-color: rgba(255,255,255,.2);
