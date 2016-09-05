@@ -262,6 +262,7 @@
     ;; am here
     ;; how do i get the blocks to function with css %??? haha easy
             [:div {:class "board"
+                   :id "board"
                    :style {:width app-width :height app-height}}
                 (doall (for [n (range (* (:height board-dimensions)
                                          (:width board-dimensions)))]
@@ -368,6 +369,16 @@
          (.-relatedTarget e)
          (.-type e))))
 
+(defn touch-handler [state e]
+  (if (= (.-type e) "touchdown")
+    (prn "reached touch down handler"
+;;          (.-button e)
+;;          (.-buttons e)
+;;          (.-relatedTarget e)
+         (.-type e))))
+
+;; (defn run-f-ctrl-panel [element f-path args
+
 
 (defn key-handler [state e]
   (let [a-key (.-key e)
@@ -387,19 +398,23 @@
    (get-in @ctrl-panel-cur [:keyboard a-key :f-pressed]))
 
 (defn register-all-listeners [state]
-  (let [app (.getElementById js/document "app")]
-  (do
-      (prn app)
-      (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
-      (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
-      (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
-      (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
-      (.addEventListener js/window "touchstart" (fn [e] (do (.preventDefault e "false")
-                                                            (blend!nn-all state @state 5))))
-      (.addEventListener js/window "touchmove" (fn [e] (do (.preventDefault e "false")
-                                                           (swap! state assoc-in [:board (int (.-id (.-target e))) :color]
-                                                                             (avg-colors (get-in @state [:weighted-color])
-                                                                                         (get-in @state [:board (int (.-id (.-target e))) :color])))))))))
+  (let
+    [app (.getElementById js/document "app")] ;; global dumb var
+      (do
+          (prn app "this is a potentially uselss app ref in register-all-listeners")
+          (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
+          (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
+          (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
+          (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
+          (.addEventListener js/window "touchstart" (fn [e] (touch-handler state e)))
+          (.addEventListener js/window "touchmove" (fn [e] (touch-handler state e))))))
+
+;;       (.addEventListener board "touchstart" (fn [e] (do  (prn "hitting touchstart") ;;(.preventDefault e "false")
+;;                                                             (blend!nn-all state @state 5))))
+;;       (.addEventListener board "touchmove" (fn [e] (do (prn "hittin touchmove")
+;;                                                        (swap! state assoc-in [:board (int (.-id (.-target e))) :color]
+;;                                                                              (avg-colors (get-in @state [:weighted-color])
+;;                                                                                          (get-in @state [:board (int (.-id (.-target e))) :color])))))))))
 
 (defonce load-listeners
     (fn [state] (.addEventListener js/window "load" (register-all-listeners state))))
