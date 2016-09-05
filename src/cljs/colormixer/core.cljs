@@ -63,11 +63,16 @@
 
 
 ;;only info that relates to block size (dependant on screen size dynamically)
-(defn get-block-view-model [board-dimensions screen-percent app-width app-height margin];app-width
-  (let [block-total-size (int (/ app-width (:width board-dimensions)))]
+
+;; DELETED APP WIDTH !!!! from args
+(defn get-block-view-model [board-dimensions screen-percent app-height margin];; DELETED APP WIDTH app-width
+  (let [block-total-size  (/ app-height (:height board-dimensions))] ;; (int (/ app-width (:width board-dimensions)))
     {:margin margin
      :block-total-size block-total-size
      :block-size (- block-total-size (* margin 2))}))
+
+
+;;block height % app-height etc???
 
 (defn set-cursor-path! [a-cursor path set-val]
   (swap! a-cursor assoc-in path set-val))
@@ -171,17 +176,31 @@
               }})
 
 
+;; multiple row divs (set width implcitly slash there is no width
+;; rows in general
+
+;; set some sort of inner-width so that the width is num-block*block-width
+
+;; relative block rectangularity/size to window (solves the orientation problem)
+
+;; rectangles in general
+
+;; app-height isn't 80% but like 50% (weak)
+
 (defn init-app-state [board-dimensions app-width-percent];DEFONCE?????
   (let [window-dim {:width (.-innerWidth js/window)
                     :height (.-innerHeight js/window)}
         gui-height-per 15
+        margins 0
         app-view {:width (* 1 (:width window-dim))
                   :height (* (/ (- 100 (* 2 gui-height-per)) 100) (:height window-dim))}
-        app-width (:width app-view) ;; needed here bc of old api
         app-height (:height app-view)
-        margins 0]
+        block-view-model (get-block-view-model board-dimensions app-width-percent app-height margins)
+        app-width (* (:width board-dimensions) (:block-total-size block-view-model)) ;; (:width app-view) ;; needed here bc of old api
+        ]
     (r/atom
       {:title "...blend away your troubles...."
+       :window-dim window-dim
        :background-color [255 255 255]
        :weighted-color [255 255 255];NECCESSARY/WANTED??!?!?!
        :app-width app-width
@@ -190,7 +209,7 @@
                          {:board-dimensions board-dimensions :screen-percent app-width-percent})
        :board-dimensions board-dimensions
        :app-width-percent app-width-percent
-       :block-view-model (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
+       :block-view-model block-view-model ;; (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
        :ctrl-panel (init-ctrl-panel)
        :view {:gui {:width (* (/ 100 100) (:width window-dim))
                     :height (* (/ gui-height-per 100) (:height window-dim))}
@@ -234,16 +253,16 @@
                                  (swap! state assoc-in [:board n :color] weighted-color)))}]))
                                  ;(swap! state assoc-in [:board n :mutable] false)))}]))
 
-(defn render-app [state app-state]
+(defn render-board [state app-state]
   (let [board-dimensions (:board-dimensions app-state)
         block-view-model (:block-view-model app-state)
         app-width (:app-width app-state) ;;75%
-        app-height "100%"]
+        app-height (:app-height app-state)]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; am here
     ;; how do i get the blocks to function with css %??? haha easy
-            [:div {:class "content"
-                   :style {:width app-width}} ;; :height app-height}}
+            [:div {:class "board"
+                   :style {:width app-width :height app-height}}
                 (doall (for [n (range (* (:height board-dimensions)
                                          (:width board-dimensions)))]
                             (render-block-html state app-state block-view-model n)))]))
@@ -270,7 +289,7 @@
 (defn render-bottom-gui [state app-state]
   (let [weighted-color-cor (r/cursor state [:weighted-color])]
 
-      [:div.botom-gui-wrapper;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
+      [:div.bottom-gui-wrapper ;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
         [:div {:class "input-wrapper"}
             [:div {:class "input-gui"
                    :style {:background-color (rgb-str @weighted-color-cor)}}
@@ -284,7 +303,8 @@
               :style {:width "10%"}}]]]]))
 
 (defn render-top-gui [state app-state]
-  (let [gui-view (get-in app-state [:view :gui])] ;; HAHA MAKE THIS ACTUALLY WORK
+  (let [gui-view (get-in app-state [:view :gui])
+        board-cur (r/cursor state [:board])] ;; HAHA MAKE THIS ACTUALLY WORK
       [:div.top-gui-wrapper {:style {:display "flex" ;;:width "20em" :height "2em"
                                      :background-color (rgb-str (:weighted-color @state))
                                      :align-items "center"
@@ -293,16 +313,26 @@
                                      :height "15vh"}}
           [:div {:class "reset"
                  :style {:background-color (rgb-str (:weighted-color @state))
-                         :width "100%"
-                         :height "2em"} ;; come back to real css solution to % width/height
-                 :on-mouse-down (fn [e state]
-                                     (let [board-cur (r/cursor state [:board])
-                                           view-info (meta @board-cur) ;; is this the new $$$$ jackpot?  view/model info as meta (view is always meta?)  (globals/constants always meta?)
-                                           board-dim (:board-dimensions view-info)
-                                           new-board (with-meta (new-board-refactor board-dim) view-info)]
-                                              (do  (prn "got to function in [ lors"))))} ;;(.-code e) "] in click event" "---> it resets the board-colors"))))}
-                                                   ;; (reset! board-cur new-board))))}
+                         :width "100%"}
+                         ;; :height "2em"} ;; come back to real css solution to % width/height
+                 :on-mouse-down (fn [e] (do
+                                            (prn "this works mouse-down")
+                                            ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
+                 :on-touch-down (fn [e] (do
+                                            (prn "this works mouse-down")
+                                            ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))}
                  "reset"]]))
+
+;;"function (state,e,board_cur){
+
+
+;;                  (fn [e state]
+;;                                      (let [board-cur (r/cursor state [:board])
+;;                                            view-info (meta @board-cur) ;; is this the new $$$$ jackpot?  view/model info as meta (view is always meta?)  (globals/constants always meta?)
+;;                                            board-dim (:board-dimensions view-info)
+;;                                            new-board (with-meta (new-board-refactor board-dim) view-info)]
+;;                                               (do  (prn "got to function in [ lors"))))} ;;(.-code e) "] in click event" "---> it resets the board-colors"))))}
+;;                                                    ;; (reset! board-cur new-board))))}
 
 ;; :view {:gui {:width (* (/ 100 100) (:width window-dim))
 ;;                     :height (* (/ gui-height-per 100) (:height window-dim))}
@@ -318,11 +348,11 @@
 ;;          (reset! board-cur new-board))))
 
 
-(defn render-colormix [state]
+(defn render-colormix-app [state]
   (let [app-state @state]
         [:div {:class "react-container"}
           (render-top-gui state app-state)
-          (render-app state app-state)
+          (render-board state app-state)
           (render-bottom-gui state app-state)]))
 
 
@@ -384,7 +414,7 @@
 (defn home-page []
   (let [board-dimensions {:width 9 :height 9}
         screen-percent (/ 75 100.0)]
-            (render-colormix app-state)))
+            (render-colormix-app app-state)))
 
 (defn about-page []
   [:div [:h2 "About colormixer"]
