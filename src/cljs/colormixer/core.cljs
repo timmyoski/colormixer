@@ -218,12 +218,17 @@
   {:mouse {:1 {:pressed false}}
    :keyboard {
               " "  {:code "Space" :key " " :pressed false
-                    :f-pressed (fn [state e board-cur]  ;; leave a-key included? ;; if already derefed/accessed var val  ;; efficient to just keep passing it?
-                                 (let [new-board ()]
+                    :f-pressed (fn [state e board-cur]
+                                 (let [old-board @board-cur
+                                       ;; testing (prn "got to test-blend from the key [" (.-code e) "] in ctrl-panel")
+                                       new-board (with-meta (blender-board old-board) (meta old-board))] ;; if using this do this somewhere else
+                                          (reset! board-cur new-board)))}
+;;                     :f-pressed (fn [state e board-cur]  ;; leave a-key included? ;; if already derefed/accessed var val  ;; efficient to just keep passing it?
+;;                                  (let [new-board ()]
 
-                                      (do
-                                        (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it blends the entire board")
-                                        (blend!nn-all state @state 10))))}
+;;                                       (do
+;;                                         (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it blends the entire board")
+;;                                         (blend!nn-all state @state 10))))}
 
               "b"  {:code "KeyB" :key "b" :pressed false
                     :f-pressed (fn [state e board-cur]
@@ -552,8 +557,11 @@
 ;;                                                                              (avg-colors (get-in @state [:weighted-color])
 ;;                                                                                          (get-in @state [:board (int (.-id (.-target e))) :color])))))))))
 
+;; window.scrollTo(0,1);
+
 (defonce load-listeners
-    (fn [state] (.addEventListener js/window "load" (register-all-listeners state))))
+    (fn [state] (.addEventListener js/window "load" (register-all-listeners state))
+                (.addEventListener js/window "load" (.scrollTo js/window 0 1))))
 
 (def board-dimensions {:width 6 :height 6})
 (def screen-percent (/ 80 100.0))
