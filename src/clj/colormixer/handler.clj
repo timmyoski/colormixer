@@ -19,7 +19,7 @@
       ;; [:img {:src "/images/favicon.ico" :style "width: 200px;"} "hmmm"]]])
       ;; [:img {:src "/images/favicon.ico" :style {:width "200px"}} "hmmm2"]]])
 
-;; <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> <!--320-->
+;; <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/> <!--320-->
 
 (defn head []
   [:head
