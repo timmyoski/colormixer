@@ -408,11 +408,11 @@
                  :style {:background-color (rgb-str (:weighted-color @state))
                          :width "100%"}
                          ;; :height "2em"} ;; come back to real css solution to % width/height
-                 :on-mouse-down (fn [e] (do
-                                            (prn "this works mouse-down")
-                                            ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
-                 :on-touch-down (fn [e] (do
-                                            (prn "this works mouse-down")
+;;                  :on-mouse-down (fn [e] (do
+;;                                             (prn "this works mouse-down")
+;;                                             ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
+                 :on-touch-start (fn [e] (do
+                                            (prn "this works touch-down in reset")
                                             ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))}
                  "reset"]]))
 
@@ -452,6 +452,9 @@
 ;;---------------------------------------------------------------------
 ;;---------------------------------------------------------------------
 ;;  Handlers
+;;
+;; all get run whenever window/app is mouse-down
+;; individual handlers get called whenever that element is mouse-down
 
 (defn mouse-handler [state e]
   (if (= (.-type e) "mousedown")
@@ -465,7 +468,8 @@
   ;; (prn "reached touch down handler"))
    (if (= (.-type e) "touchdown")
      (.preventDefault e)
-     (prn "reached touch down handler")))
+     (prn "reached touch down handler" ;;(js-keys e)
+          )))
 
 
 
@@ -502,8 +506,8 @@
           ;; (prn app "this is a potentially useless app ref in register-all-listeners")
           (.addEventListener js/window "keydown" (fn [e] (key-handler state e))) ;;THIS IS FUCKED HOW I SIWTCH AROUND THE API HERE SHOULD BE "E" FIRST THEN "STATE"
           (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
-          (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
-          (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
+          ;; (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
+          ;; (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
           (.addEventListener js/window "touchstart" (fn [e] (touch-handler state e)))
           (.addEventListener js/window "touchmove" (fn [e] (touch-handler state e))))))
 
