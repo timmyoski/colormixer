@@ -464,12 +464,31 @@
          (.-relatedTarget e)
          (.-type e))))
 
+;; (fn [e] (do
+;;     (prn "this works touch-down in reset")
+;;     ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
+
+(defn touch-down-handler [state e target t-class]
+  ;; (let [test-city (prn (js-keys e) " test city touch-down-handler")]
+  (prn "hitting touch down handler" target t-class)
+  (cond
+      (= t-class "colorbox") ((get-in @state [:ctrl-panel :keyboard " " :f-pressed]) state e (r/cursor state [:board]))
+    ))
+
 (defn touch-handler [state e]
+  (let [target (.-target e)
+        t-class (.-className target)
+        test-city (prn (.-type e) "the type???")]
   ;; (prn "reached touch down handler"))
-   (if (= (.-type e) "touchdown")
-     (.preventDefault e)
-     (prn "reached touch down handler" ;;(js-keys e)
-          )))
+  ;;(do
+   ;; (prn "reached touch down handler" target)
+    (cond
+      (= (.-type e) "touchstart") (touch-down-handler state e target t-class))))
+        ;;(.preventDefault e) ;; is this fucking doing anything
+        ;;(prn "reached touch down handler" (.-className (.-target e)));;(js-keys e)
+;;         (cond
+;;           (=  "colorbox") (prn "hit colorbox handler too")
+;;           :else (prn "hitting else in touch-handler"))))))
 
 
 
@@ -508,8 +527,8 @@
           (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
           ;; (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
           ;; (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
-          (.addEventListener js/window "touchstart" (fn [e] (touch-handler state e)))
-          (.addEventListener js/window "touchmove" (fn [e] (touch-handler state e))))))
+          (.addEventListener js/window "touchstart" (fn [e] (touch-handler state e))))))
+          ;; (.addEventListener js/window "touchmove" (fn [e] (touch-handler state e))))))
 
 ;;       (.addEventListener board "touchstart" (fn [e] (do  (prn "hitting touchstart") ;;(.preventDefault e "false")
 ;;                                                             (blend!nn-all state @state 5))))
