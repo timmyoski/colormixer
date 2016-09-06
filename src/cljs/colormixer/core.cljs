@@ -122,6 +122,18 @@
            (if (:mutable block)
                   (swap! state assoc-in [:board n :color] new-color))));;ratio of "move"/"blend-all!"? change weight-prim-color val?
 
+;; (defn blender [weight-prim-color block]
+;;   new-color (apply avg-colors (weight-by weight-prim-color (:color block)
+;;                                                             neighbors-colors))]
+
+(defn blender [block board weight-prim-color] ;;output new-color
+  (let [neighbors-colors (map #(:color (board %)) (vals (:neighbors block)))]
+    (apply avg-colors (weight-by weight-prim-color (:color block) neighbors-colors))))
+
+;; (defn blender-board [board]
+;;   (map #(blender % board 10)
+
+
 ;; (defn get-blended-color [primary-color prim-col-weight & color-vecs ]
 ;;   (let []
 ;;     (apply avg-colors (weight-by weight-prim-color (:color block) neighbors-colors))))
@@ -131,40 +143,120 @@
       (for [n (range (count (:board app-state)))]
         (blend!nn state app-state n weight-prim-color))))
 
-(defn map-f-board [a-function block-loc a-board]
+(defn map-f-board [a-function mapping-loc a-board]
   (vec
     (map
-     #(assoc-in % [block-loc]
-                    (vec (map a-function (block-loc %))))
-     a-board)))
+         #(assoc-in % [mapping-loc] (vec (map a-function (mapping-loc %))))
+          a-board)))
+
+;; RESET/SUB-CURSORS????????????
+;; (defn map-f-board2 [a-function mapping-loc a-board]
+;;   (vec
+;;     (map
+;;      #(assoc-in % [mapping-loc]
+;;                     (vec (map a-function (mapping-loc %))))
+;;      a-board)))
+
 
 ;;disassoc fucntion from data structure
 
-(defn inc-ed-color-board [board]
+(defn blender-blender [board]
+  (map-f-board #(blender % board 10) :color board))
+
+
+(defn inc-ed-board [board] ;; lighten entire board
   (map-f-board inc :color board))
+
+(defn dec-ed-board
+  "returns an entire board with all color vals decremented"
+  [board]
+  (map-f-board dec :color board))
+
+;; (defn get-incer-board [amt board] ;; lighten entire board
+;;   (map-f-board #(+ amt %) :color board))
+
+(defn inc-amt-board [amt board] ;; returns an entire board lightened by amt
+  (map-f-board #(+ % amt) :color board))
+
+;; (defn inc-amt-board2 [amt board-cur] ;; returns an entire board lightened by amt
+;;   (map-f-board2 #(+ % amt) :color @board-cur))
+
+(defn dec-amt-board [amt board] ;; returns an entire board lightened by amt
+  (map-f-board #(- % amt) :color board))
+
+
+;; (defn dec-ed-board
+;;   "returns an entire board with all color vals decremented"
+;;   [board]
+;;   (map-f-board dec :color board))
+
 ;;; here 9/3 hmmm seems to be working right...?  can't swap out entire board w/o rerender entire app huh tho?
 
 
+;; (defn blended-board [board]
+;;   (map-f-board #() :color board))
+
 ;;TOTALLY LEGIT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ;; (symbol (str "r" "r")) => rr (as a var!!!)
+
+
+(defn run-key-f [a-key state e board-cur]
+    ((get-in @state [:ctrl-panel :keyboard a-key :f-pressed]) state e board-cur))
+
+(defn get-key-ctrl [a-key a-code a-function]  ;; how solve gen(just-1) prob instaed of change whoe interface?  like just to test and insert in one key-val what output?  map?  like a '(this thing) ?
+  {a-key {:code a-code :key a-key :pressed false
+          :f-pressed (fn [state e board-cur] ;;auto-gifted these args/refs...
+                         (let [view-info (meta @board-cur)
+                               new-board (with-meta (a-function @board-cur) view-info)] ;; if using this do this somewhere else
+                                 (do (prn "got to the " a-key " f() from in ctrl-panel")
+                                     (reset! board-cur new-board))))}})
+
+;; (def m-ctrl (get-key-ctrl "m" "KeyM" (dec-amt-board 5 (r/cursor app-state [:board]))))
 
 (defn init-ctrl-panel []
   {:mouse {:1 {:pressed false}}
    :keyboard {
               " "  {:code "Space" :key " " :pressed false
-                    :f-pressed (fn [state e board-cur]  ;; leave a-key included?
-                                              ;; if already derefed/accessed var val
-                                              ;; efficient to just keep passing it?
-                            (do
-                              (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it blends the entire board")
-                              (blend!nn-all state @state 10)))}
+                    :f-pressed (fn [state e board-cur]  ;; leave a-key included? ;; if already derefed/accessed var val  ;; efficient to just keep passing it?
+                                 (let [new-board ()]
+
+                                      (do
+                                        (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it blends the entire board")
+                                        (blend!nn-all state @state 10))))}
+
+              "b"  {:code "KeyB" :key "b" :pressed false
+                    :f-pressed (fn [state e board-cur]
+                                 (run-key-f " " state e board-cur))}
+
+;;                :f-pressed (fn [ & args ] ;;state e board-cur]
+;;                                  (run-key-f " " args))}
 
               "."  {:code "Period" :key "." :pressed false
                     :f-pressed (fn [state e board-cur]
                                  (let [view-info (meta @board-cur)
-                                       new-board (with-meta (inc-ed-color-board @board-cur) view-info)] ;; if using this do this somewhere else
-                                         (do (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
+                                       new-board (with-meta (inc-ed-board @board-cur) view-info)] ;; if using this do this somewhere else
+                                         (do (prn "got to lighten from the key [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
                                              (reset! board-cur new-board))))}
+
+              ","  {:code "Comma" :key "," :pressed false
+                    :f-pressed (fn [state e board-cur]
+                                 (let [view-info (meta @board-cur)
+                                       new-board (with-meta (dec-ed-board @board-cur) view-info)] ;; if using this do this somewhere else
+                                         (do (prn "got to darken from the key [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
+                                             (reset! board-cur new-board))))}
+              "m"  {:code "KeyM" :key "m" :pressed false
+                    :f-pressed (fn [state e board-cur]
+                                 (let [old-board @board-cur ;; testing (prn "got to dec5 from the key [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
+                                       new-board (with-meta (inc-amt-board 5 old-board) (meta old-board))] ;; if using this do this somewhere else
+                                          (reset! board-cur new-board)))}
+
+              "/"  {:code "Slash" :key "/" :pressed false
+                    :f-pressed (fn [state e board-cur]
+                                 (let [old-board @board-cur ;; testing (prn "got to dec5 from the key [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
+                                       new-board (with-meta (dec-amt-board 5 old-board) (meta old-board))] ;; if using this do this somewhere else
+                                          (reset! board-cur new-board)))}
+
+               ;; "v" "KeyV"
 
               "r" {:code "KeyR" :key "r" :pressed false
                    :f-pressed (fn [state e board-cur]  ;; DO - always just pass round state/global and deref when get approp level --> key-cursor at key-handler
@@ -363,25 +455,31 @@
 
 (defn mouse-handler [state e]
   (if (= (.-type e) "mousedown")
-    (prn "reached mouse down handler wheysef"
+    (prn "reached mouse down handler"
          (.-button e)
          (.-buttons e)
          (.-relatedTarget e)
          (.-type e))))
 
 (defn touch-handler [state e]
-  (if (= (.-type e) "touchdown")
-    (prn "reached touch down handler"
+  ;; (prn "reached touch down handler"))
+   (if (= (.-type e) "touchdown")
+     (.preventDefault e)
+     (prn "reached touch down handler")))
+
+
+
 ;;          (.-button e)
-;;          (.-buttons e)
+;;         (.-buttons e)
 ;;          (.-relatedTarget e)
-         (.-type e))))
+;;          (.-type e))))
 
 ;; (defn run-f-ctrl-panel [element f-path args
 
 
 (defn key-handler [state e]
   (let [a-key (.-key e)
+        test-mode (prn a-key (.-code e))
         key-model-cur (r/cursor state [:ctrl-panel :keyboard a-key])
         f-pressed (:f-pressed @key-model-cur)
         board-cur (r/cursor state [:board])] ;; most/ ???all??? key functions will affect the entire board (unless directional for ctrl "person")
@@ -398,11 +496,11 @@
    (get-in @ctrl-panel-cur [:keyboard a-key :f-pressed]))
 
 (defn register-all-listeners [state]
-  (let
+  (let  ;; listner-add {"keydown" (fn [args] (key-handler args))} ???
     [app (.getElementById js/document "app")] ;; global dumb var
       (do
-          (prn app "this is a potentially uselss app ref in register-all-listeners")
-          (.addEventListener js/window "keydown" (fn [e] (key-handler state e)))
+          ;; (prn app "this is a potentially useless app ref in register-all-listeners")
+          (.addEventListener js/window "keydown" (fn [e] (key-handler state e))) ;;THIS IS FUCKED HOW I SIWTCH AROUND THE API HERE SHOULD BE "E" FIRST THEN "STATE"
           (.addEventListener js/window "keyup" (fn [e] (key-handler state e)))
           (.addEventListener js/window "mousedown" (fn [e] (mouse-handler state e)))
           (.addEventListener js/window "mouseup" (fn [e] (mouse-handler state e)))
