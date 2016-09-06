@@ -295,7 +295,7 @@
 (defn init-app-state [board-dimensions app-width-percent];DEFONCE?????
   (let [window-dim {:width (.-innerWidth js/window)
                     :height (.-innerHeight js/window)}
-        gui-height-per 15
+        gui-height-per 20
         margins 0
         app-view {:width (* 1 (:width window-dim))
                   :height (* (/ (- 100 (* 2 gui-height-per)) 100) (:height window-dim))}
@@ -395,8 +395,13 @@
 (defn render-bottom-gui [state app-state]
   (let [weighted-color-cor (r/cursor state [:weighted-color])]
 
-      [:div.bottom-gui-wrapper ;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
-        [:div {:class "input-wrapper"}
+      [:div.bottom-gui-wrapper {:style {:display "flex" ;;:width "20em" :height "2em"  ;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
+                                       :background-color (rgb-str (:weighted-color @state))
+                                       :align-items "center"
+                                       :justify-content "center"
+                                       :width "100%"
+                                       :height "20vh"}}
+         [:div {:class "input-wrapper"}
             [:div {:class "input-gui"
                    :style {:background-color (rgb-str @weighted-color-cor)}}
                       (render-rgb-input "red" weighted-color-cor)
@@ -416,20 +421,26 @@
                                      :align-items "center"
                                      :justify-content "center"
                                      :width "100%"
-                                     :height "15vh"}}
+                                     :height "20vh"}}
        [:div {:class "dec"
-              :style {:background-color (rgb-str (map #(+ % 5) (:weighted-color @state)))
-                      :width "25%"}
+              :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
+                      :font-size "8rem"
+                      :width "25%"
+                      :height "100%"
+                      :display "flex" ;;:width "20em" :height "2em"
+                      :align-items "center"
+                      :justify-content "center"}
                          ;; :height "2em"} ;; come back to real css solution to % width/height
 ;;                  :on-mouse-down (fn [e] (do
 ;;                                             (prn "this works mouse-down")
-;;                                             ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
+;;                                             ((get-in @state [:ctrl-panel :keyboard "m" :f-pressed]) state e board-cur)))
               :on-touch-start (fn [e] (do
                                           (prn "this works touch-start in reset")
                                           ((get-in @state [:ctrl-panel :keyboard "m" :f-pressed]) state e board-cur)))}
-      "-"]
+      [:p "-"]]
       [:div {:class "reset"
              :style {:background-color (rgb-str (:weighted-color @state))
+                     :font-size "2rem"
                      :width "50%"}
                      ;; :height "2em"} ;; come back to real css solution to % width/height
 ;;                  :on-mouse-down (fn [e] (do
@@ -440,12 +451,17 @@
                                         ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))}
              "reset"]
        [:div {:class "inc"
-             :style {:background-color (rgb-str (map #(+ % 5) (:weighted-color @state)))
-                     :width "25%"}
-                     ;; :height "2em"} ;; come back to real css solution to % width/height
+             :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
+                     :font-size "8rem"
+                     :width "25%"
+                     :height "100%"
+                     :display "flex" ;;:width "20em" :height "2em"
+                     :align-items "center"
+                     :justify-content "center"}
+                     ;; :height "2em"} ;; come back to real css solution to % width/height ???
 ;;                  :on-mouse-down (fn [e] (do
 ;;                                             (prn "this works mouse-down")
-;;                                             ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
+;;                                             ((get-in @state [:ctrl-panel :keyboard "/" :f-pressed]) state e board-cur)))
              :on-touch-start (fn [e] (do
                                         (prn "this works touch-start in reset")
                                         ((get-in @state [:ctrl-panel :keyboard "/" :f-pressed]) state e board-cur)))}
