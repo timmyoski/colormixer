@@ -122,21 +122,6 @@
            (if (:mutable block)
                   (swap! state assoc-in [:board n :color] new-color))));;ratio of "move"/"blend-all!"? change weight-prim-color val?
 
-;; (defn blender [weight-prim-color block]
-;;   new-color (apply avg-colors (weight-by weight-prim-color (:color block)
-;;                                                             neighbors-colors))]
-
-(defn blender [block board weight-prim-color] ;;output new-color
-  (let [neighbors-colors (map #(:color (board %)) (vals (:neighbors block)))]
-    (apply avg-colors (weight-by weight-prim-color (:color block) neighbors-colors))))
-
-;; (defn blender-board [board]
-;;   (map #(blender % board 10)
-
-
-;; (defn get-blended-color [primary-color prim-col-weight & color-vecs ]
-;;   (let []
-;;     (apply avg-colors (weight-by weight-prim-color (:color block) neighbors-colors))))
 
 (defn blend!nn-all [state app-state weight-prim-color]
   (doall
@@ -157,11 +142,27 @@
 ;;                     (vec (map a-function (mapping-loc %))))
 ;;      a-board)))
 
+;; (defn blender [block] ;;output new-color
+;;   (let [board (:board @app-state)
+;;         neighbors-colors (map #(:color (board %)) (vals (:neighbors block)))
+;;         weight-prim-color 10]
+;;     (apply avg-colors (weight-by weight-prim-color (:color block) neighbors-colors))))
 
-;;disassoc fucntion from data structure
+;; (blender b ex-board)
 
-(defn blender-blender [board]
-  (map-f-board #(blender % board 10) :color board))
+;; (map #(blender % ex-board) ex-board)
+
+(defn blender [block board] ;;output new-color
+  (let [;; board ex-board
+        ;; test-city (prn (:color block))
+        neighbors-colors (map #(:color (board %)) (vals (:neighbors block)))
+        weight-prim-color 10]
+    (apply avg-colors (weight-by weight-prim-color (:color block) neighbors-colors))))
+
+
+(defn blender-board [a-board]
+ (vec
+    (map #(assoc-in % [:color] (blender % a-board)) a-board)))
 
 
 (defn inc-ed-board [board] ;; lighten entire board
@@ -246,14 +247,21 @@
                                              (reset! board-cur new-board))))}
               "m"  {:code "KeyM" :key "m" :pressed false
                     :f-pressed (fn [state e board-cur]
-                                 (let [old-board @board-cur ;; testing (prn "got to dec5 from the key [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
-                                       new-board (with-meta (inc-amt-board 5 old-board) (meta old-board))] ;; if using this do this somewhere else
+                                 (let [old-board @board-cur ;; testing (prn "got to dec5 from the key [" (.-code e) "] in ctrl-panel")
+                                       new-board (with-meta (dec-amt-board 5 old-board) (meta old-board))] ;; if using this do this somewhere else
                                           (reset! board-cur new-board)))}
 
               "/"  {:code "Slash" :key "/" :pressed false
                     :f-pressed (fn [state e board-cur]
-                                 (let [old-board @board-cur ;; testing (prn "got to dec5 from the key [" (.-code e) "] in ctrl-panel" "---> it lightens the entire board")
-                                       new-board (with-meta (dec-amt-board 5 old-board) (meta old-board))] ;; if using this do this somewhere else
+                                 (let [old-board @board-cur ;; testing (prn "got to dec5 from the key [" (.-code e) "] in ctrl-panel")
+                                       new-board (with-meta (inc-amt-board 5 old-board) (meta old-board))] ;; if using this do this somewhere else
+                                          (reset! board-cur new-board)))}
+
+               "t"  {:code "KeyT" :key "t" :pressed false
+                    :f-pressed (fn [state e board-cur]
+                                 (let [old-board @board-cur
+                                       ;; testing (prn "got to test-blend from the key [" (.-code e) "] in ctrl-panel")
+                                       new-board (with-meta (blender-board old-board) (meta old-board))] ;; if using this do this somewhere else
                                           (reset! board-cur new-board)))}
 
                ;; "v" "KeyV"
@@ -393,7 +401,7 @@
         ;((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e (r/cursor state [:board]))))}
 
        [:img {:src "/images/favicon.ico" ;;:class "loading-img"
-              :style {:width "10%"}}]]]]))
+              :style {:width "5%"}}]]]]))
 
 (defn render-top-gui [state app-state]
   (let [gui-view (get-in app-state [:view :gui])
@@ -404,17 +412,39 @@
                                      :justify-content "center"
                                      :width "100%"
                                      :height "15vh"}}
-          [:div {:class "reset"
-                 :style {:background-color (rgb-str (:weighted-color @state))
-                         :width "100%"}
+       [:div {:class "dec"
+              :style {:background-color (rgb-str (map #(+ % 5) (:weighted-color @state)))
+                      :width "25%"}
                          ;; :height "2em"} ;; come back to real css solution to % width/height
 ;;                  :on-mouse-down (fn [e] (do
 ;;                                             (prn "this works mouse-down")
 ;;                                             ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
-                 :on-touch-start (fn [e] (do
-                                            (prn "this works touch-down in reset")
-                                            ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))}
-                 "reset"]]))
+              :on-touch-start (fn [e] (do
+                                          (prn "this works touch-start in reset")
+                                          ((get-in @state [:ctrl-panel :keyboard "m" :f-pressed]) state e board-cur)))}
+      "-"]
+      [:div {:class "reset"
+             :style {:background-color (rgb-str (:weighted-color @state))
+                     :width "50%"}
+                     ;; :height "2em"} ;; come back to real css solution to % width/height
+;;                  :on-mouse-down (fn [e] (do
+;;                                             (prn "this works mouse-down")
+;;                                             ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
+             :on-touch-start (fn [e] (do
+                                        (prn "this works touch-start in reset")
+                                        ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))}
+             "reset"]
+       [:div {:class "inc"
+             :style {:background-color (rgb-str (map #(+ % 5) (:weighted-color @state)))
+                     :width "25%"}
+                     ;; :height "2em"} ;; come back to real css solution to % width/height
+;;                  :on-mouse-down (fn [e] (do
+;;                                             (prn "this works mouse-down")
+;;                                             ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
+             :on-touch-start (fn [e] (do
+                                        (prn "this works touch-start in reset")
+                                        ((get-in @state [:ctrl-panel :keyboard "/" :f-pressed]) state e board-cur)))}
+             "+"]]))
 
 ;;"function (state,e,board_cur){
 
@@ -465,44 +495,29 @@
          (.-type e))))
 
 ;; (fn [e] (do
-;;     (prn "this works touch-down in reset")
+;;     (prn "this works touch-start in reset")
 ;;     ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
 
-(defn touch-down-handler [state e target t-class]
-  ;; (let [test-city (prn (js-keys e) " test city touch-down-handler")]
-  (prn "hitting touch down handler" target t-class)
+(defn touch-start-handler [state e target t-class]
+  ;; (let [test-city (prn (js-keys e) " test city touch-start-handler")]
+  (prn "hitting touch start handler" target t-class)
   (cond
-      (= t-class "colorbox") ((get-in @state [:ctrl-panel :keyboard " " :f-pressed]) state e (r/cursor state [:board]))
+      (= t-class "colorbox") ((get-in @state [:ctrl-panel :keyboard "t" :f-pressed]) state e (r/cursor state [:board]))
     ))
 
 (defn touch-handler [state e]
   (let [target (.-target e)
         t-class (.-className target)
-        test-city (prn (.-type e) "the type???")]
-  ;; (prn "reached touch down handler"))
-  ;;(do
-   ;; (prn "reached touch down handler" target)
+        ;; test-city (prn (.-type e) "the type???")
+        ]
     (cond
-      (= (.-type e) "touchstart") (touch-down-handler state e target t-class))))
+      (= (.-type e) "touchstart") (touch-start-handler state e target t-class))))
         ;;(.preventDefault e) ;; is this fucking doing anything
-        ;;(prn "reached touch down handler" (.-className (.-target e)));;(js-keys e)
-;;         (cond
-;;           (=  "colorbox") (prn "hit colorbox handler too")
-;;           :else (prn "hitting else in touch-handler"))))))
-
-
-
-;;          (.-button e)
-;;         (.-buttons e)
-;;          (.-relatedTarget e)
-;;          (.-type e))))
-
-;; (defn run-f-ctrl-panel [element f-path args
-
 
 (defn key-handler [state e]
-  (let [a-key (.-key e)
-        test-mode (prn a-key (.-code e))
+  (let [;; all of this logic happens twice b/c of key-up and down....
+        a-key (.-key e)
+        ;; test-mode (prn a-key (.-code e))
         key-model-cur (r/cursor state [:ctrl-panel :keyboard a-key])
         f-pressed (:f-pressed @key-model-cur)
         board-cur (r/cursor state [:board])] ;; most/ ???all??? key functions will affect the entire board (unless directional for ctrl "person")
