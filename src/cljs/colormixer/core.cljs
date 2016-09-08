@@ -293,25 +293,25 @@
 ;; app-height isn't 80% but like 50% (weak)
 
 (defn init-app-state [board-dimensions app-width-percent];DEFONCE?????
-  (let [window-dim {:width (.-innerWidth js/window)
+  (let [w-dim {:width (.-innerWidth js/window)
                     :height (.-innerHeight js/window)}
-        ;; app-width (min (.-innerWidth js/window) (.-innerHeight js/window))
+        ;;app-width (min (:width w-dim) (:height w-dim))
         ;; non
 
 
 
 
-        gui-height-per 20
+        gui-height-per 15
         margins 0
-        app-view {:width (* 1 (:width window-dim))
-                  :height (* (/ (- 100 (* 2 gui-height-per)) 100) (:height window-dim))}
+        app-view {:width (:width w-dim)
+                  :height (* (/ (- 100 (* 2 gui-height-per)) 100) (:height w-dim))}
         app-height (:height app-view)
         block-view-model (get-block-view-model board-dimensions app-width-percent app-height margins)
         app-width (* (:width board-dimensions) (:block-total-size block-view-model)) ;; (:width app-view) ;; needed here bc of old api
         ]
     (r/atom
       {:title "...blend away your troubles...."
-       :window-dim window-dim
+       :window-dim w-dim
        :background-color [255 255 255]
        :weighted-color [255 255 255];NECCESSARY/WANTED??!?!?!
        :app-width app-width
@@ -322,8 +322,8 @@
        :app-width-percent app-width-percent
        :block-view-model block-view-model ;; (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
        :ctrl-panel (init-ctrl-panel)
-       :view {:gui {:width (* (/ 100 100) (:width window-dim))
-                    :height (* (/ gui-height-per 100) (:height window-dim))}
+       :view {:gui {:width (* (/ 100 100) (:width w-dim))
+                    :height (* (/ gui-height-per 100) (:height w-dim))}
               :app {:width app-width
                     :height app-height}
               :modal {:future true}}})))
@@ -384,14 +384,32 @@
   (let [rgb ["red" "green" "blue"] ;onenter-> sw focus to next?
         rgb-index (.indexOf rgb color-type)]
     ;add some sort of button that has a :on method that incs/decs the color input ;just have it dec the val, start that chain of derrefs/renders
-      [:input {:class "rgb-input"
+      [:input {;;:class "rgb-input"
                :type "text"
                :max-length 3 ;; :on-key-press (fn [e] (if (< 47 (.-keyCode e) 58) (do (prn (.-keyCode e)) e)))
                :name color-type
                :placeholder color-type
-               :style {:border-color color-type}
+               :style {;;:border-color color-type
+                       :text-align "center"
+                       :border (str "2px solid" " " color-type)
+                       :width "20vw"
+                       :height "5vh"
+                       :margin "0 5vw 0 5vw"
+                        :flex 1
+                        :align-self "center"}
                :on-change (fn [e] (swap! weighted-color-cor assoc-in [rgb-index]
                                                                      (int (.-value (.-target e)))))}]))
+
+;; /* top | right | bottom | left */
+;; margin: 2px 1em 0 auto;
+
+;; .rgb-input{
+;;   width: 15%;
+;;   height: 35px;
+;;   text-align: center;
+;;   border: 5px solid;
+;; }
+
 
 ;; (defn make-keyword [ & inputs ]
 ;;   (keyword (apply str inputs)))
@@ -403,21 +421,23 @@
 
       [:div.bottom-gui-wrapper {:style {:display "flex" ;;:width "20em" :height "2em"  ;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
                                        :background-color (rgb-str (:weighted-color @state))
-                                       :align-items "center"
-                                       :justify-content "center"
-                                       :width "100%"
-                                       :height "20vh"}}
-         [:div {:class "input-wrapper"}
-            [:div {:class "input-gui"
-                   :style {:background-color (rgb-str @weighted-color-cor)}}
+                                       :align-items "flex-end"
+                                       :justify-content "bottom"
+                                       :width "100vw"
+                                       :height "10vh"
+                                       :border-color "blue"}}
+         ;;[:div ;;{:class "input-wrapper"}
+;;             [:div {;;:class "input-gui"
+;;                    :style {:background-color (rgb-str @weighted-color-cor)}}
                       (render-rgb-input "red" weighted-color-cor)
                       (render-rgb-input "green" weighted-color-cor)
                       (render-rgb-input "blue" weighted-color-cor)
     ;; stoped here 9/3 trying to make reset button work
         ;((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e (r/cursor state [:board]))))}
-
-       [:img {:src "/images/favicon.ico" ;;:class "loading-img"
-              :style {:width "5%"}}]]]]))
+;;        [:img {:src "/images/favicon.ico" ;;:class "loading-img"
+;;               :style {:width "5%"
+;;                       :visibility "hidden"}}]
+             ]))
 
 (defn render-top-gui [state app-state]
   (let [gui-view (get-in app-state [:view :gui])
@@ -427,10 +447,10 @@
                                      :align-items "center"
                                      :justify-content "center"
                                      :width "100%"
-                                     :height "20vh"}}
+                                     :height "10vh"}}
        [:div {:class "dec"
               :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
-                      :font-size "8rem"
+                      :font-size "5rem"
                       :width "25%"
                       :height "100%"
                       :display "flex" ;;:width "20em" :height "2em"
@@ -458,7 +478,7 @@
              "reset"]
        [:div {:class "inc"
              :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
-                     :font-size "8rem"
+                     :font-size "4rem"
                      :width "25%"
                      :height "100%"
                      :display "flex" ;;:width "20em" :height "2em"
@@ -484,8 +504,8 @@
 ;;                                               (do  (prn "got to function in [ lors"))))} ;;(.-code e) "] in click event" "---> it resets the board-colors"))))}
 ;;                                                    ;; (reset! board-cur new-board))))}
 
-;; :view {:gui {:width (* (/ 100 100) (:width window-dim))
-;;                     :height (* (/ gui-height-per 100) (:height window-dim))}
+;; :view {:gui {:width (* (/ 100 100) (:width w-dim))
+;;                     :height (* (/ gui-height-per 100) (:height w-dim))}
 ;;               :app {:width app-width
 ;;                     :height app-height}
 
@@ -765,6 +785,20 @@
 ;;------------------------------------------------------------------------------------
 
 ;; random notes
+
+;;------------------------------------------------------------------------------------
+;;------------------------------------------------------------------------------------
+;; Well it’s nice to end with some good news. In both platforms, in all conditions, @media device-width always returns the same value as screen.width, and device-height always returns the same value as screen.height. There’s no matchMedia support in Opera, but I’ll assume the same would be true.
+
+;; This is great – but of course don’t forget the main issue afflicting those measurements: the lack of rotated values in iOS and Android 2.3’s wacky 800 viewport value which I’ll postulate may be echoed here too.
+
+;; @media width and height also track other JavaScript properties in both platforms. @media width is almost always equal to window.innerWidth (except in non-constrained landscape mode in iOS v5 when the former is 980 and the former that curious 981). @media height is always equal to window.innerHeight.
+
+;; (It’s not so clear whether this pattern would be followed by Opera too, were we able to measure it this way. To confirm, it would require a CSS-based test harness – perhaps another study.)
+
+;; But there are a couple of things worth saying about this observation. Firstly, the window.innerWidth and window.innerHeight values themselves are something of a bit of a mixed bag. See the earlier discussions above.
+
+
 ;; no mas scroll
 
 ; with map structure of inputs key-handlers can adopt a function/lookup syntax

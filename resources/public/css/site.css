@@ -50,22 +50,17 @@ a:hover {
   overflow: hidden; /* text box!?!?!?!*/
 }
 
-.rgb-input{
-  width: 15%;
-  height: 35px;
-  text-align: center;
-  border: 5px solid;
-}
 
 .input-gui{
+/*   text-align: center;
+  margin: 0 auto;
+  display: inline-block;
+  vertical-align: middle; */
+
   border-style: outset;
   border-width: 10px;
   border-color: rgba(255,255,255,.2);
-  text-align: center;
-  margin: 0 auto;
   -webkit-transform: translateZ(0);
-  display: inline-block;
-  vertical-align: middle;
   transform: translateZ(0);
   box-shadow: 0 0 1px rgba(0, 0, 0, 0);
   backface-visibility: hidden;
