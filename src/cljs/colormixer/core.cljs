@@ -295,6 +295,11 @@
 (defn init-app-state [board-dimensions app-width-percent];DEFONCE?????
   (let [window-dim {:width (.-innerWidth js/window)
                     :height (.-innerHeight js/window)}
+        ;; app-width (min (.-innerWidth js/window) (.-innerHeight js/window))
+
+
+
+
         gui-height-per 20
         margins 0
         app-view {:width (* 1 (:width window-dim))
@@ -350,7 +355,7 @@
                    :margin (px-str (:margin block-view-model));;bvm is already der@ffed!
                    :width  (px-str (:block-size block-view-model)) ;; would (str (/ 75 9) "%") even work?
                    :height (px-str (:block-size block-view-model))}
-           :on-mouse-move (fn [e] (do  (.preventDefault e "false");stops text/mouse highlighting
+           :on-mouse-move (fn [e] (do  ;;(.preventDefault e "false");stops text/mouse highlighting
                                        (blend!nn state app-state n 7)))
                               ;; sep out blend and set functionality for more complex behavior later?
                               ;; attach this function to block-model like OOP?
@@ -519,6 +524,45 @@
 ;;     (prn "this works touch-start in reset")
 ;;     ((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e board-cur)))
 
+;;9/6 get rid of doble tap zoom
+
+
+;; The tap event is not native, because it relies on conditionally listening upon touchstart to determine if the start and stop targets are the same: if so, jQuery Mobiel determines that it is indeed a genuine tap event and fires the custom, non-native event tap. This logic can be seen in the original source file, at line 75 onwards of ./js/events/touch.js.
+
+;; An example usage is as follow:
+
+;; $(selector).on('tap', function(e){
+;;     e.preventDefault();
+;; });
+
+;; (def temp-tap false) (nil? var)
+
+
+;; (let [mystr "no match"]
+;;   (case mystr
+;;         "" 0
+;;         "hello" (count mystr)
+;;         "default"))
+;; ;;=> "default"
+
+
+;; if
+
+;; handler - ctrl - panel
+
+;; (def ctrl-panel2
+;;   {"touchstart {}
+
+;; (defn dispatch-touch [event state]
+;;     ((get-in [(.-type e) (.-taget e) :f-pressed]) event state)
+
+(defn touch-event-handler [state e] ;; should be e state to map to js args
+  (let [event-type (.-type e)]
+    (prn event-type)))
+
+;; touch-start
+;; t-pressed = true
+
 (defn touch-start-handler [state e target t-class]
   ;; (let [test-city (prn (js-keys e) " test city touch-start-handler")]
   (prn "hitting touch start handler" target t-class)
@@ -526,13 +570,35 @@
       (= t-class "colorbox") ((get-in @state [:ctrl-panel :keyboard "t" :f-pressed]) state e (r/cursor state [:board]))
     ))
 
+(defn touch-end-handler [state e target t-class]
+  ;; (let [test-city (prn (js-keys e) " test city touch-start-handler")]
+  (prn "hitting touch start handler" target t-class)
+  (cond
+      (= t-class "colorbox") ((get-in @state [:ctrl-panel :keyboard "t" :f-pressed]) state e (r/cursor state [:board]))
+    ))
+(def start-target nil)
+
+;; let [board-width (min (.-innerWidth .-innerHeight))
+;; so the width is always a certain % of the screen based on the rectangularity of the screen
+;; can do
+;; let [rectagularity (/ .-innerWidth .-innerHeight)]
+;; this basically does the same as the modular block t screen ratio idea
+
+
+
 (defn touch-handler [state e]
-  (let [target (.-target e)
+  (let [event-type (.-type e)
+        target (.-target e)
         t-class (.-className target)
         ;; test-city (prn (.-type e) "the type???")
         ]
     (cond
-      (= (.-type e) "touchstart") (touch-start-handler state e target t-class))))
+      (= (.-type e) "touchstart") (touch-start-handler state e target t-class)
+      (= (.-type e) "touchend") (touch-end-handler state e target t-class))))
+
+;;                                 (do
+;;                                     (touch-end-handler state e target t-class)
+;;                                     (tap-handler state e target t-class)))
         ;;(.preventDefault e) ;; is this fucking doing anything
 
 (defn key-handler [state e]
