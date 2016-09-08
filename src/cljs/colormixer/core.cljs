@@ -296,6 +296,7 @@
   (let [window-dim {:width (.-innerWidth js/window)
                     :height (.-innerHeight js/window)}
         ;; app-width (min (.-innerWidth js/window) (.-innerHeight js/window))
+        ;; nonsense
 
 
 
