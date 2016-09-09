@@ -292,41 +292,58 @@
 
 ;; app-height isn't 80% but like 50% (weak)
 
+
+(defn get-block-view-model2 [board-dimensions board-len margin];; DELETED APP WIDTH app-width
+  (let [block-total-size  (/ board-len (:width board-dimensions))] ;; (int (/ app-width (:width board-dimensions)))
+    {:margin margin
+     :block-total-size block-total-size
+     :block-size (- block-total-size (* margin 2))}))
+
 (defn init-app-state [board-dimensions app-width-percent];DEFONCE?????
   (let [w-dim {:width (.-innerWidth js/window)
-                    :height (.-innerHeight js/window)}
-        ;;app-width (min (:width w-dim) (:height w-dim))
-        ;; non
-
-
-
-
-        gui-height-per 15
+               :height (.-innerHeight js/window)}
+        rectangularity (/ (:width w-dim) (:height w-dim))
+        long-side-len (max (:width w-dim) (:height w-dim))
+        board-len (if (< .8 rectangularity 1.25)
+                    (* .8 long-side-len);; if board-len will take up more than 80% of the screen
+                    (min (:width w-dim) (:height w-dim)))
+        short-long-per (* (/ board-len long-side-len) 100)
+        board-percent (/ board-len long-side-len)
+        gui-percent (/ (- 100 board-percent) 2)
+        ;;blk-size (/ board-len (:width board-dimensions))
         margins 0
+        ;; app-"height" (max (:width w-dim) (:height w-dim))
+        ;; board-width (- app-height (* 2 gui-height))
+        ;; block-size (/ board-width (:width board-dimensions))
+        block-view-model2 (get-block-view-model2 board-dimensions board-len margins)
+        ;;
+        ;;
+        ;; by "app" i mean "board" right?
         app-view {:width (:width w-dim)
-                  :height (* (/ (- 100 (* 2 gui-height-per)) 100) (:height w-dim))}
-        app-height (:height app-view)
-        block-view-model (get-block-view-model board-dimensions app-width-percent app-height margins)
-        app-width (* (:width board-dimensions) (:block-total-size block-view-model)) ;; (:width app-view) ;; needed here bc of old api
+                  :height (* (/ (- 100 (* 2 gui-percent)) 100) (:height w-dim))}
+        board-height board-len
+        block-view-model (get-block-view-model board-dimensions app-width-percent board-height margins)
+        board-width board-len ;;(* (:width board-dimensions) (:block-total-size block-view-model)) ;; (:width app-view) ;; needed here bc of old api
         ]
     (r/atom
       {:title "...blend away your troubles...."
        :window-dim w-dim
        :background-color [255 255 255]
        :weighted-color [255 255 255];NECCESSARY/WANTED??!?!?!
-       :app-width app-width
-       :app-height app-height
+       :board-width board-width
+       :board-height board-height
        :board (with-meta (new-board-refactor board-dimensions)
                          {:board-dimensions board-dimensions :screen-percent app-width-percent})
        :board-dimensions board-dimensions
        :app-width-percent app-width-percent
-       :block-view-model block-view-model ;; (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
+       :block-view-model block-view-model2 ;; (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
        :ctrl-panel (init-ctrl-panel)
        :view {:gui {:width (* (/ 100 100) (:width w-dim))
-                    :height (* (/ gui-height-per 100) (:height w-dim))}
-              :app {:width app-width
-                    :height app-height}
-              :modal {:future true}}})))
+                    :height (* (/ gui-percent 100) (:height w-dim))}
+              :app {:width board-width
+                    :height board-height}
+              :modal {:future true}
+              :block {:future true}}})))
 
 
 
@@ -367,14 +384,14 @@
 (defn render-board [state app-state]
   (let [board-dimensions (:board-dimensions app-state)
         block-view-model (:block-view-model app-state)
-        app-width (:app-width app-state) ;;75%
-        app-height (:app-height app-state)]
+        board-width (:board-width app-state) ;;75%
+        board-height (:board-height app-state)]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; am here
     ;; how do i get the blocks to function with css %??? haha easy
             [:div {:class "board"
                    :id "board"
-                   :style {:width app-width :height app-height}}
+                   :style {:width board-width :height board-height}}
                 (doall (for [n (range (* (:height board-dimensions)
                                          (:width board-dimensions)))]
                             (render-block-html state app-state block-view-model n)))]))
@@ -506,8 +523,8 @@
 
 ;; :view {:gui {:width (* (/ 100 100) (:width w-dim))
 ;;                     :height (* (/ gui-height-per 100) (:height w-dim))}
-;;               :app {:width app-width
-;;                     :height app-height}
+;;               :app {:width board-width
+;;                     :height board-height}
 
 
 ;; (fn [state e board-cur]  ;; DO - always just pass round state/global and deref when get approp level --> key-cursor at key-handler
