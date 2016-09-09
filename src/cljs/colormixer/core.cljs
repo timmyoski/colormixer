@@ -309,41 +309,36 @@
                     (min (:width w-dim) (:height w-dim)))
         short-long-per (* (/ board-len long-side-len) 100)
         board-percent (/ board-len long-side-len)
-        gui-percent (/ (- 100 board-percent) 2)
-        ;;blk-size (/ board-len (:width board-dimensions))
+        gui-percent (int (/ (- 100 short-long-per) 2))
         margins 0
-        ;; app-"height" (max (:width w-dim) (:height w-dim))
-        ;; board-width (- app-height (* 2 gui-height))
-        ;; block-size (/ board-width (:width board-dimensions))
         block-view-model2 (get-block-view-model2 board-dimensions board-len margins)
-        ;;
-        ;;
-        ;; by "app" i mean "board" right?
-        app-view {:width (:width w-dim)
-                  :height (* (/ (- 100 (* 2 gui-percent)) 100) (:height w-dim))}
         board-height board-len
-        block-view-model (get-block-view-model board-dimensions app-width-percent board-height margins)
         board-width board-len ;;(* (:width board-dimensions) (:block-total-size block-view-model)) ;; (:width app-view) ;; needed here bc of old api
         ]
     (r/atom
       {:title "...blend away your troubles...."
-       :window-dim w-dim
+       :w-dim w-dim
        :background-color [255 255 255]
        :weighted-color [255 255 255];NECCESSARY/WANTED??!?!?!
        :board-width board-width
        :board-height board-height
-       :board (with-meta (new-board-refactor board-dimensions)
+       :board (with-meta (new-board-refactor board-dimensions) ;; this is model
                          {:board-dimensions board-dimensions :screen-percent app-width-percent})
        :board-dimensions board-dimensions
        :app-width-percent app-width-percent
        :block-view-model block-view-model2 ;; (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
        :ctrl-panel (init-ctrl-panel)
-       :view {:gui {:width (* (/ 100 100) (:width w-dim))
-                    :height (* (/ gui-percent 100) (:height w-dim))}
+       :view {:gui {:width (str 100 "vw")
+                    :height (str gui-percent "vh")
+                    :gui-percent gui-percent
+                    }
               :app {:width board-width
                     :height board-height}
               :modal {:future true}
-              :block {:future true}}})))
+              :board {:board-percent board-percent
+                      :width board-width
+                      :height board-height}
+              :block block-view-model2}})))
 
 
 
@@ -433,15 +428,19 @@
 ;; (make-keyword [4] "g" 5)
 ;; (make-keyword "div" "." "top-gui-wrapper")
 
+;; :view {:gui {:width (* (/ 100 100) (:width w-dim))
+;;              :height (* (/ gui-percent 100) (:height w-dim))}
+
 (defn render-bottom-gui [state app-state]
-  (let [weighted-color-cor (r/cursor state [:weighted-color])]
+  (let [weighted-color-cor (r/cursor state [:weighted-color])
+        gui-view (get-in app-state [:view :gui])]
 
       [:div.bottom-gui-wrapper {:style {:display "flex" ;;:width "20em" :height "2em"  ;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
                                        :background-color (rgb-str (:weighted-color @state))
-                                       :align-items "flex-end"
+                                       :align-items "center"
                                        :justify-content "bottom"
-                                       :width "100vw"
-                                       :height "10vh"
+                                       :width (:width gui-view)
+                                       :height (:height gui-view)
                                        :border-color "blue"}}
          ;;[:div ;;{:class "input-wrapper"}
 ;;             [:div {;;:class "input-gui"
@@ -463,8 +462,9 @@
                                      :background-color (rgb-str (:weighted-color @state))
                                      :align-items "center"
                                      :justify-content "center"
-                                     :width "100%"
-                                     :height "10vh"}}
+                                     :width (:width gui-view)
+                                     :height (:height gui-view)
+                                     }}
        [:div {:class "dec"
               :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
                       :font-size "5rem"
