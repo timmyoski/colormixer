@@ -217,7 +217,9 @@
 ;; (def m-ctrl (get-key-ctrl "m" "KeyM" (dec-amt-board 5 (r/cursor app-state [:board]))))
 
 (defn init-ctrl-panel []
-  {:mouse {:1 {:pressed false}}
+  {:touch {:pressed false
+           :target nil}
+   :mouse {:1 {:pressed false}}
    :keyboard {
               " "  {:code "Space" :key " " :pressed false
                     :f-pressed (fn [state e board-cur]
@@ -304,22 +306,24 @@
 (defn init-app-state [board-dimensions];DEFONCE?????
   (let [w-dim {:width (.-innerWidth js/window)
                :height (.-innerHeight js/window)}
+        ;;board-screen-max-percent (i.e. its a square so percent left for guis)
+        bsmp (/ 70 100.0)
         rectangularity (/ (:width w-dim) (:height w-dim))
         long-side-len (max (:width w-dim) (:height w-dim))
-        board-len (if (< .8 rectangularity 1.25)
-                    (* .8 long-side-len);; if board-len will take up more than 80% of the screen
+        board-len (if (< bsmp rectangularity (/ 1 bsmp))
+                    (* bsmp long-side-len);; if board-len will take up more than 80% of the screen
                     (min (:width w-dim) (:height w-dim)))
         short-long-per (* (/ board-len long-side-len) 100)
         board-percent (/ board-len long-side-len)
-        gui-percent (int (/ (- 100 short-long-per) 2))
+        gui-percent (int (/ (- 100 short-long-per) 3))
         margins 0
         block-view-model2 (get-block-view-model2 board-dimensions board-len margins)
         board-height board-len
         board-width board-len ;;(* (:width board-dimensions) (:block-total-size block-view-model)) ;; (:width app-view) ;; needed here bc of old api
-        app-width-percent (/ (:width w-dim) (board-width))
+        app-width-percent (/ (:width w-dim) board-width)
         ]
     (r/atom
-      {:title "...blend away your troubles...."
+      {:title "...blend...."
        :w-dim w-dim
        :background-color [255 255 255]
        :weighted-color [255 255 255];NECCESSARY/WANTED??!?!?!
@@ -335,6 +339,8 @@
                     :height (str gui-percent "vh")
                     :gui-percent gui-percent
                     }
+              :title {:width (str 100 "vw")
+                      :height (str gui-percent "vh")}
               :app {:width board-width
                     :height board-height}
               :modal {:future true}
@@ -540,13 +546,23 @@
 ;;     (do  (prn "got to function in [" (.-code e) "] in ctrl-panel" "---> it resets the board-colors")
 ;;          (reset! board-cur new-board))))
 
+(defn render-title [state app-state]
+  (let [title-view (get-in app-state [:view :title])]
+    [:div {:class "janky-title"
+           :display "flex"
+           :height (:height title-view)
+           :width (:width title-view)
+           :style {:font-size "6vh" ;;(:height title-view)
+                   }} (:title app-state)]))
+
 
 (defn render-colormix-app [state]
   (let [app-state @state]
         [:div {:class "react-container"}
-          (render-top-gui state app-state)
-          (render-board state app-state)
-          (render-bottom-gui state app-state)]))
+              (render-title state app-state)
+              (render-top-gui state app-state)
+              (render-board state app-state)
+              (render-bottom-gui state app-state)]))
 
 
 ;;---------------------------------------------------------------------
@@ -690,7 +706,7 @@
                 (.addEventListener js/window "load" (.scrollTo js/window 0 1))))
 
 (def board-dimensions {:width 6 :height 6})
-(def screen-percent (/ 80 100.0))
+(def screen-percent (/ 70 100.0))
 (def app-state (init-app-state board-dimensions))
 
 ;; -------------------------
