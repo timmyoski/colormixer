@@ -19,6 +19,8 @@
 ;;------------------------------------------------------------------------------------
 ;;------------------------------------------------------------------------------------
 
+(def app-id "bae5da6f-e931-453e-a8e2-b6907983031b")
+
 (defn rand-color-num []
   [(rand-int 256)
    (rand-int 256)
@@ -299,7 +301,7 @@
      :block-total-size block-total-size
      :block-size (- block-total-size (* margin 2))}))
 
-(defn init-app-state [board-dimensions app-width-percent];DEFONCE?????
+(defn init-app-state [board-dimensions];DEFONCE?????
   (let [w-dim {:width (.-innerWidth js/window)
                :height (.-innerHeight js/window)}
         rectangularity (/ (:width w-dim) (:height w-dim))
@@ -314,6 +316,7 @@
         block-view-model2 (get-block-view-model2 board-dimensions board-len margins)
         board-height board-len
         board-width board-len ;;(* (:width board-dimensions) (:block-total-size block-view-model)) ;; (:width app-view) ;; needed here bc of old api
+        app-width-percent (/ (:width w-dim) (board-width))
         ]
     (r/atom
       {:title "...blend away your troubles...."
@@ -448,6 +451,9 @@
                       (render-rgb-input "red" weighted-color-cor)
                       (render-rgb-input "green" weighted-color-cor)
                       (render-rgb-input "blue" weighted-color-cor)
+                      [:script {:src (str "https://jsconsole.com/js/remote.js?" app-id)}]
+
+;;  <script src="https://jsconsole.com/js/remote.js?efd48a76-716b-41c3-9552-b0050148c090"></script>
     ;; stoped here 9/3 trying to make reset button work
         ;((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e (r/cursor state [:board]))))}
 ;;        [:img {:src "/images/favicon.ico" ;;:class "loading-img"
@@ -685,7 +691,7 @@
 
 (def board-dimensions {:width 6 :height 6})
 (def screen-percent (/ 80 100.0))
-(def app-state (init-app-state board-dimensions screen-percent))
+(def app-state (init-app-state board-dimensions))
 
 ;; -------------------------
 ;; Views
