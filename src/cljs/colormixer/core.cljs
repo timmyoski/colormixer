@@ -480,7 +480,7 @@
               :on-touch-start (fn [e] (do
                                           (prn "this works touch-start in reset")
                                           ((get-in @state [:ctrl-panel :keyboard "m" :f-pressed]) state e board-cur)))}
-      [:p "-"]]
+      "-"]
       [:div {:class "reset"
              :style {:background-color (rgb-str (:weighted-color @state))
                      :font-size "2rem"
