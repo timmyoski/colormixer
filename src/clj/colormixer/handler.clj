@@ -6,8 +6,8 @@
             [config.core :refer [env]]))
 
 (def mount-target
-  [:div#app
-     [:div.wrapper
+  [:div#app {:class "top-wrappers"}
+     [:div.wrapper {:class "top-wrappers"}
       [:h3 {:name "test"
             :style {:height 3}}
        "...compiling your colormix..."]

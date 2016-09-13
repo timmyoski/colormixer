@@ -2,7 +2,7 @@ h1, h2, h3 {
   color: #000;
 }
 
-h1 {
+/* h1 {
   font-size: 2.5em
 }
 
@@ -12,7 +12,7 @@ h2 {
 
 h3 {
   font-size: 1.5em
-}
+} */
 
 a {
   text-decoration: none;
@@ -24,15 +24,25 @@ a:hover {
 }
 /* -------------- new css -------------- */
 
+html {width: 100%;
+      height: 100%;}
+
+.top-wrappers {
+  width: 100%;
+  height: 100%;
+}
+
 .body-container {
   font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 100%;
+/*   max-width: 100%; */
   margin: 0 auto;
   -webkit-font-smoothing: antialiased;
-  font-size: 1.125em;
   color: #333;
-  line-height: 1.5em;
+/*   line-height: 1.5em;  THIS WAS THE BUG!!!! */
   text-align: center;
+  display: flex;
+  width: 99%;
+  height: 99%;
 }
 
 .board{

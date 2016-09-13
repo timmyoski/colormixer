@@ -315,7 +315,10 @@
                     (min (:width w-dim) (:height w-dim)))
         short-long-per (* (/ board-len long-side-len) 100)
         board-percent (/ board-len long-side-len)
-        gui-percent (int (/ (- 100 short-long-per) 3))
+        gui-percent {:height (int (/ (- 100 short-long-per) 3)) ;; force round down...
+                     :width 100}
+        gui-width-per (:width gui-percent)
+        gui-height-per (:height gui-percent)
         margins 0
         block-view-model2 (get-block-view-model2 board-dimensions board-len margins)
         board-height board-len
@@ -335,12 +338,12 @@
        :app-width-percent app-width-percent
        :block-view-model block-view-model2 ;; (get-block-view-model board-dimensions app-width-percent app-width app-height margins)
        :ctrl-panel (init-ctrl-panel)
-       :view {:gui {:width (str 100 "vw")
-                    :height (str gui-percent "vh")
+       :view {:gui {:width (str gui-width-per "%")
+                    :height (str gui-height-per "%")
                     :gui-percent gui-percent
                     }
-              :title {:width (str 100 "vw")
-                      :height (str gui-percent "vh")}
+              :title {:width (str gui-width-per "%") ;; not implemented
+                      :height (str gui-height-per "%")}
               :app {:width board-width
                     :height board-height}
               :modal {:future true}
@@ -395,6 +398,7 @@
     ;; how do i get the blocks to function with css %??? haha easy
             [:div {:class "board"
                    :id "board"
+                   :display "flex"
                    :style {:width board-width :height board-height}}
                 (doall (for [n (range (* (:height board-dimensions)
                                          (:width board-dimensions)))]
@@ -444,10 +448,11 @@
   (let [weighted-color-cor (r/cursor state [:weighted-color])
         gui-view (get-in app-state [:view :gui])]
 
-      [:div.bottom-gui-wrapper {:style {:display "flex" ;;:width "20em" :height "2em"  ;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
+      [:div.bottom-gui-wrapper {:style {
+                                        :display "flex" ;;:width "20em" :height "2em"  ;; <--how to functionize? (str ? ;;;;;;;;;; ;; [:div {:class "title-wrapper"} ;; [:h2 {:class "the-title"} (:title app-state)]]]
                                        :background-color (rgb-str (:weighted-color @state))
                                        :align-items "center"
-                                       :justify-content "bottom"
+                                       :justify-content "center"
                                        :width (:width gui-view)
                                        :height (:height gui-view)
                                        :border-color "blue"}}
@@ -459,6 +464,8 @@
                       (render-rgb-input "blue" weighted-color-cor)
                       [:script {:src (str "https://jsconsole.com/js/remote.js?" app-id)}]
 
+
+
 ;;  <script src="https://jsconsole.com/js/remote.js?efd48a76-716b-41c3-9552-b0050148c090"></script>
     ;; stoped here 9/3 trying to make reset button work
         ;((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e (r/cursor state [:board]))))}
@@ -466,6 +473,24 @@
 ;;               :style {:width "5%"
 ;;                       :visibility "hidden"}}]
              ]))
+
+;;[:img {:src "/images/favicon.ico"}]
+
+
+
+
+
+
+
+
+;; ended here 9/10
+;; why doesn't the % work here?
+;; was that (str method) of the gui-view-height actually messed up?
+
+
+
+
+
 
 (defn render-top-gui [state app-state]
   (let [gui-view (get-in app-state [:view :gui])
@@ -479,8 +504,8 @@
                                      }}
        [:div {:class "dec"
               :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
-                      :font-size "5rem"
-                      :width "25%"
+;;                       :font-size "15vh"
+;;                       :width "25%"
                       :height "100%"
                       :display "flex" ;;:width "20em" :height "2em"
                       :align-items "center"
@@ -495,8 +520,12 @@
       "-"]
       [:div {:class "reset"
              :style {:background-color (rgb-str (:weighted-color @state))
-                     :font-size "2rem"
-                     :width "50%"}
+;;                      :font-size "2rem"
+;;                      :font-size "15vh"
+                     :justify-content "center"
+                     :display "flex"
+;;                      :width "50%"
+                     }
                      ;; :height "2em"} ;; come back to real css solution to % width/height
 ;;                  :on-mouse-down (fn [e] (do
 ;;                                             (prn "this works mouse-down")
@@ -507,9 +536,10 @@
              "reset"]
        [:div {:class "inc"
              :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
-                     :font-size "4rem"
-                     :width "25%"
-                     :height "100%"
+;;                      :font-size "15vh"
+;;                      :font-size "4rem"
+;;                      :width "25%"
+;;                      :height "100%"
                      :display "flex" ;;:width "20em" :height "2em"
                      :align-items "center"
                      :justify-content "center"}
@@ -549,16 +579,34 @@
 (defn render-title [state app-state]
   (let [title-view (get-in app-state [:view :title])]
     [:div {:class "janky-title"
-           :display "flex"
-           :height (:height title-view)
-           :width (:width title-view)
-           :style {:font-size "6vh" ;;(:height title-view)
-                   }} (:title app-state)]))
+;;            :display "flex"
+           :style {
+;;                     :height (:height title-view)
+                   :display "flex" ;;:width "20em" :height "2em"
+                   :background-color (rgb-str (:weighted-color @state))
+                   :align-items "center"
+                   :justify-content "center"
+                   :width (:width title-view)
+                   :height (:height title-view)} ;; (:height title-view)
+;;            :width (:width title-view)
+;;            :font-size (:height title-view)
+;;            :style {:font-size "1vh" ;;(:height title-view) ;; i tihnk these are only all working bc of the correct font-size
+;;                    }
+           }
+
+                (:title app-state)])) ;; 10vh isnt working??? again?
+
+;;
+;;
+;; 9/9 day stop
+;; is percent gui working?
+;;
+
 
 
 (defn render-colormix-app [state]
   (let [app-state @state]
-        [:div {:class "react-container"}
+        [:div {:class "react-container top-wrappers"}
               (render-title state app-state)
               (render-top-gui state app-state)
               (render-board state app-state)
@@ -615,6 +663,9 @@
 
 ;; (defn dispatch-touch [event state]
 ;;     ((get-in [(.-type e) (.-taget e) :f-pressed]) event state)
+
+(defn window-handler [e state]
+  ())
 
 (defn touch-event-handler [state e] ;; should be e state to map to js args
   (let [event-type (.-type e)]
@@ -703,7 +754,8 @@
 
 (defonce load-listeners
     (fn [state] (.addEventListener js/window "load" (register-all-listeners state))
-                (.addEventListener js/window "load" (.scrollTo js/window 0 1))))
+;;                 (.addEventListener js/window "load" (.scrollTo js/window 0 1))
+      )) ;; no work
 
 (def board-dimensions {:width 6 :height 6})
 (def screen-percent (/ 70 100.0))
@@ -722,7 +774,7 @@
    [:div [:a {:href "/"} "go to the home page"]]])
 
 (defn current-page []
-  [:div [(session/get :current-page)]])
+  [:div {:class "top-wrappers"} [(session/get :current-page)]])
 
 ;; -------------------------
 ;; Routes
