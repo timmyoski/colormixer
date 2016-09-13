@@ -297,6 +297,16 @@
 ;; app-height isn't 80% but like 50% (weak)
 
 
+;; (def events
+;;   {"window" {"touchstart" {:pressed false
+;;                            :f-pressed (prn "hitting touchstart")}
+;;              "touchmove" {:pressed false
+;;                           :f-pressed (prn "hitting touchstart")}
+;;              "touchend" {:pressed false
+;;                          :f-pressed (prn "hitting touchstart")}
+;;              }})
+
+
 (defn get-block-view-model2 [board-dimensions board-len margin];; DELETED APP WIDTH app-width
   (let [block-total-size  (/ board-len (:width board-dimensions))] ;; (int (/ app-width (:width board-dimensions)))
     {:margin margin
@@ -501,15 +511,20 @@
                                      :justify-content "center"
                                      :width (:width gui-view)
                                      :height (:height gui-view)
+                                     :font-size "2em";
                                      }}
        [:div {:class "dec"
               :style {:background-color (rgb-str (map #(+ % 30) (:weighted-color @state)))
 ;;                       :font-size "15vh"
 ;;                       :width "25%"
-                      :height "100%"
+                      :height "90%"
+                      :width "25%"
+                      :border "1px solid black"
                       :display "flex" ;;:width "20em" :height "2em"
                       :align-items "center"
-                      :justify-content "center"}
+                      :justify-content "center"
+;;                       :font
+                      }
                          ;; :height "2em"} ;; come back to real css solution to % width/height
 ;;                  :on-mouse-down (fn [e] (do
 ;;                                             (prn "this works mouse-down")
@@ -524,6 +539,8 @@
 ;;                      :font-size "15vh"
                      :justify-content "center"
                      :display "flex"
+                     :width "25%"
+                     :font-size ".5em"
 ;;                      :width "50%"
                      }
                      ;; :height "2em"} ;; come back to real css solution to % width/height
@@ -540,6 +557,9 @@
 ;;                      :font-size "4rem"
 ;;                      :width "25%"
 ;;                      :height "100%"
+                     :height "90%"
+                     :width "25%"
+                     :border "1px solid black"
                      :display "flex" ;;:width "20em" :height "2em"
                      :align-items "center"
                      :justify-content "center"}
@@ -664,8 +684,8 @@
 ;; (defn dispatch-touch [event state]
 ;;     ((get-in [(.-type e) (.-taget e) :f-pressed]) event state)
 
-(defn window-handler [e state]
-  ())
+;; (defn window-handler [e state]
+;;   ())
 
 (defn touch-event-handler [state e] ;; should be e state to map to js args
   (let [event-type (.-type e)]
@@ -673,6 +693,13 @@
 
 ;; touch-start
 ;; t-pressed = true
+
+;; (defn touch-start-handler [state e target t-class]
+;;   ;; (let [test-city (prn (js-keys e) " test city touch-start-handler")]
+;;   (prn "hitting touch move handler" target t-class) ;; is
+;;   (cond
+;;       (= t-class "colorbox") ((get-in @state [:ctrl-panel :keyboard "t" :f-pressed]) state e (r/cursor state [:board]))
+;;     ))
 
 (defn touch-start-handler [state e target t-class]
   ;; (let [test-city (prn (js-keys e) " test city touch-start-handler")]
@@ -694,6 +721,9 @@
 ;; can do
 ;; let [rectagularity (/ .-innerWidth .-innerHeight)]
 ;; this basically does the same as the modular block t screen ratio idea
+
+;; (defn touch-handler2 [e state] ;; RESET THIS IDIOM HURR
+
 
 
 
