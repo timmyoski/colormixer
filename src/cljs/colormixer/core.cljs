@@ -635,11 +635,13 @@
               (render-bottom-gui state app-state)
          [:div.tester
         [:p (str "keys " (js-keys (.-screen js/window)))]
-       [:p (.-availWidth (.-screen js/window))]
-       [:p (.-availHeight (.-screen js/window))]
-       [:p (.-width (.-screen js/window))]
-       [:p (.-height (.-screen js/window))]
-       [:p (.-type (.-orientation (.-screen js/window)))]]]))
+       [:p (str (.-availWidth (.-screen js/window))": availWidth")]
+       [:p (str (.-availHeight (.-screen js/window)) ": availHeight")]
+       [:p (str (.-width (.-screen js/window))  ": screen-weight")]
+       [:p (str (.-height (.-screen js/window)) ": screen-height")]
+       [:p (str (.-type (.-orientation (.-screen js/window))) ": screen-orentation")]
+       [:p (str (.-innerWidth js/window) " : window-innerWidth")]
+       [:p (str (.-innerHeight js/window) " : window-innerHeight")]]]))
 
 
 ;;---------------------------------------------------------------------
