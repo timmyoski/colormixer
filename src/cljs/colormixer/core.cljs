@@ -476,6 +476,8 @@
 
 
 
+
+
 ;;  <script src="https://jsconsole.com/js/remote.js?efd48a76-716b-41c3-9552-b0050148c090"></script>
     ;; stoped here 9/3 trying to make reset button work
         ;((get-in @state [:ctrl-panel :keyboard "r" :f-pressed]) state e (r/cursor state [:board]))))}
@@ -630,7 +632,14 @@
               (render-title state app-state)
               (render-top-gui state app-state)
               (render-board state app-state)
-              (render-bottom-gui state app-state)]))
+              (render-bottom-gui state app-state)
+         [:div.tester
+        [:p (str "keys " (js-keys (.-screen js/window)))]
+       [:p (.-availWidth (.-screen js/window))]
+       [:p (.-availHeight (.-screen js/window))]
+       [:p (.-width (.-screen js/window))]
+       [:p (.-height (.-screen js/window))]
+       [:p (.-type (.-orientation (.-screen js/window)))]]]))
 
 
 ;;---------------------------------------------------------------------
