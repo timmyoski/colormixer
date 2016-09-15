@@ -314,8 +314,9 @@
      :block-size (- block-total-size (* margin 2))}))
 
 (defn init-app-state [board-dimensions];DEFONCE?????
-  (let [w-dim {:width (.-innerWidth js/window)
-               :height (.-innerHeight js/window)}
+  (let [w-dim {:width (.-availWidth (.-screen js/window)) :height (.-availHeight (.-screen js/window))}
+;;             (if (= (.-type (.-orientation (.-screen js/window))) "landscape-primary")
+;;                 {:width (.-innerWidth js/window) :height (.-innerHeight js/window)}
         ;;board-screen-max-percent (i.e. its a square so percent left for guis)
         bsmp (/ 70 100.0)
         rectangularity (/ (:width w-dim) (:height w-dim))
