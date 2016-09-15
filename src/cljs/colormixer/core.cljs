@@ -639,7 +639,7 @@
        [:p (str (.-availHeight (.-screen js/window)) ": availHeight")]
        [:p (str (.-width (.-screen js/window))  ": screen-weight")]
        [:p (str (.-height (.-screen js/window)) ": screen-height")]
-       [:p (str (.-type (.-orientation (.-screen js/window))) ": screen-orentation")]
+;;        [:p (str (.-type (.-orientation (.-screen js/window))) ": screen-orentation")]
        [:p (str (.-innerWidth js/window) " : window-innerWidth")]
        [:p (str (.-innerHeight js/window) " : window-innerHeight")]]]))
 
