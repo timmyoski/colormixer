@@ -634,15 +634,16 @@
               (render-top-gui state app-state)
               (render-board state app-state)
               (render-bottom-gui state app-state)
-         [:div.tester
-        [:p (str "keys " (js-keys (.-screen js/window)))]
-       [:p (str (.-availWidth (.-screen js/window))": availWidth")]
-       [:p (str (.-availHeight (.-screen js/window)) ": availHeight")]
-       [:p (str (.-width (.-screen js/window))  ": screen-weight")]
-       [:p (str (.-height (.-screen js/window)) ": screen-height")]
-;;        [:p (str (.-type (.-orientation (.-screen js/window))) ": screen-orentation")]
-       [:p (str (.-innerWidth js/window) " : window-innerWidth")]
-       [:p (str (.-innerHeight js/window) " : window-innerHeight")]]]))
+;;          [:div.tester
+;;         [:p (str "keys " (js-keys (.-screen js/window)))]
+;;        [:p (str (.-availWidth (.-screen js/window))": availWidth")]
+;;        [:p (str (.-availHeight (.-screen js/window)) ": availHeight")]
+;;        [:p (str (.-width (.-screen js/window))  ": screen-weight")]
+;;        [:p (str (.-height (.-screen js/window)) ": screen-height")]
+;; ;;        [:p (str (.-type (.-orientation (.-screen js/window))) ": screen-orentation")]
+;;        [:p (str (.-innerWidth js/window) " : window-innerWidth")]
+;;        [:p (str (.-innerHeight js/window) " : window-innerHeight")]]
+         ]))
 
 
 ;;---------------------------------------------------------------------
